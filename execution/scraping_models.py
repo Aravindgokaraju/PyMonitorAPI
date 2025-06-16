@@ -3,6 +3,8 @@ import re
 from typing import List, Optional
 from selenium.webdriver.remote.webelement import WebElement
 
+from execution.interaction_service import InteractionService
+
 
 class Website:
 
@@ -27,6 +29,7 @@ class Website:
             
 
 class Criteria:
+    
     def __init__(self, commands:list):
         #Criterion Array holds the specifics for ONE criterion is in format of:
         #[xpath,action1,action2,action3]
@@ -36,7 +39,7 @@ class Criteria:
         # IMPORTANT: If the child has multiple instances in which we have to sift through, this keeps track of the number of objects in child, actionCount cannot increment unless this is 0
         #This will also be the number used to add the nth child with the same child to the stack
         self.childCount=-1
-        self.xpath_id = 0 
+        self.xpath_id = 0 # used in find command to find specific element
         self.actions:list =[]
         self.parent = ""
         self.child=""
@@ -80,8 +83,9 @@ class Criteria:
     def setChildCount(self,newCount):
         self.childCount = newCount
     
+ 
 
-       
+
 
     def __repr__(self):
         return (f"SampleClass(xpath='{self.xpath}', actions ='{self.actions[0]}')")

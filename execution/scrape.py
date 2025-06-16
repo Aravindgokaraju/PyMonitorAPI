@@ -16,33 +16,11 @@ class ScrapingService:
         self.criteria_dict: Dict[str, Criteria] = {} #TODO: legacy variable, delete later
         self.parent_pair: Dict[str,str] = {}
         self.start_index = 0
-        self.cachedWebsites
+        self.cachedWebsites=""
         
         # Initialize function map
-        self.function_map = self._initialize_function_map()
+        self.function_map = self.interaction_service._initialize_function_map()
 
-    def _initialize_function_map(self):
-        return {
-            'open_site': self.interaction_service._open_website,
-            'go_back': self.interaction_service._go_back,
-            'basic_click': self.interaction_service._click,
-            'strong_click': self.interaction_service._strong_click,
-            'enter_string': self.interaction_service._enter_string,
-            'test_command': self.interaction_service._test,
-            'scroll_view': self.interaction_service._scroll_into_view,
-            'fast_find': self.interaction_service._find_element,
-            'fast_find_multiple': self.interaction_service._find_elements,
-            'wait_find': self.interaction_service._wait_for_element_presence,
-            'wait_click': self.interaction_service._wait_for_element_clickable,
-            'local_finds': self.interaction_service._find_local_elements,
-            'local_find': self.interaction_service._find_local_element,
-            'self_find': self.interaction_service._find_self,
-            'wait_find_self': self.interaction_service._wait_find_self,
-            'print_text': self.interaction_service._print_text,
-            'add_to_table': self.interaction_service._get_price,
-            'sleep': self.interaction_service._sleep,
-            'debug_print': self.interaction_service._debug,
-        }
 
     def scrape_websites(self) -> List[Tuple[str, str, str]]:
         """Main method to execute the scraping process"""
@@ -88,7 +66,7 @@ class ScrapingService:
             if not full_sku:
                 continue
                 
-            sku = full_sku[0]
+            sku = full_sku["sku_id"]
             try:
                 self._process_sku(website_data, sku, table_data)
             except:
@@ -99,22 +77,47 @@ class ScrapingService:
         """Process a single SKU for a website"""
         sku_data = []
         #initial_criteria = self.criteria_dict[website.criteriaList[self.start_index].xpath].copyOf()
-        initial_criteria = Criteria(website_data["steps"]) # Criteria will store its actions as well as its xpath removing need for global actions managment
+        #initial_criteria = Criteria(website_data["steps"].hasProperty("init==true")) # Criteria will store its actions as well as its xpath removing need for global actions managment
         #Initial should be read from criteria dictionary
+        initial_criteria = self.criteria_dict[website_data["steps"].hasProperty("init==true").xpath]
         self.command_stack.push(initial_criteria)
         
         try:
             while not self.command_stack.is_empty():
+                # Get the current criterion without removing it from the stack
                 criterion = self.command_stack.peek()
-                webElement = self.interaction_service._find_element(self.criteria_dict,criterion.xpath) #You need criteria dict for parent finding features
+                
+                # Find the web element for this criterion
+                webElement = self.interaction_service.smart_find(self.criteria_dict, criterion.xpath)
+                
+                # Process all actions for this criterion
                 while criterion.actionCount < len(criterion.actions):
                     action = criterion.actions[criterion.actionCount]
-                    self._execute_action(criterion, action, sku, sku_data) # If this returns an error and action count is zero, then retry find
                     
-                self.command_stack.pop()
+                    # Execute the current action
+                    self._execute_action(criterion, action, sku, sku_data)
+                    
+                    # Check if stack has changed (new item pushed or current item removed)
+                    current_top = self.command_stack.peek() if not self.command_stack.is_empty() else None
+                    if current_top != criterion:
+                        # Stack changed - break out of action loop to reprocess new top
+                        break
+                        
+                    # Only increment action counter if we're still processing the same criterion
+                    if current_top == criterion:
+                        criterion.actionCount += 1
+                    else:
+                        # Only reached if all actions completed without stack change
+                        # Remove the completed criterion from the stack
+                        self.command_stack.pop()
+                        
+                        # Perform the final act operation
+                        criterion.act(webElement, sku)
+                        continue  # Skip the break below
+                    
+                    # If we get here, the stack changed mid-processing
+                    break  # Exit action loop to reprocess new stack top
                 
-            if sku_data:
-                table_data.extend(sku_data)
                 
         except Exception as e:
             print(f"ERROR processing SKU {sku}: {e}")
@@ -149,24 +152,28 @@ class ScrapingService:
              command(criterion, sku)
         else:
             command(criterion)
-        if(criterion.childCount==0):
-            criterion.setActionCount(criterion.actionCount + 1)
+        # the loop over the criteria actions handles this I think
+        # if(criterion.childCount==0):
+        #     criterion.setActionCount(criterion.actionCount + 1)
 
 
 
     def add_next_crit(self, current_criteria: Criteria):
         """Add the next single criteria to the command stack"""
+        #TODO: keep next actions in data format. If a certian part of the parent actions has to be repeated in order for each next action to work, 
+        # add commands to manipulate action count in the next actions area so that when the stack gets back to the parent criteria, it reruns more than just the add next command
         if(current_criteria.childCount == -1):
             print("scape.py: setting child count")
-            current_criteria.childCount= self.interaction_service._smart_find_elements(current_criteria.child).count() 
+            current_criteria.childCount= self.interaction_service.smart_find_elements(current_criteria.child).count() 
             # If the current criteria has multiple children, make it so criteriaDict can decide which one to pick, or make the child property a list
         processed_count = current_criteria.childCount
+        if(processed_count>0):   # ensures that once everthings proccessed, we can move past add next crit.
+            new_crit = self.criteria_dict[current_criteria.child].copyOf(
+                xpath_id=processed_count
+            ) # sets xpath_id to the processed count for the new criteria
+            self.command_stack.push(new_crit)
+            current_criteria.setChildCount(current_criteria.childCount-1)
 
-        new_crit = self.criteria_dict[current_criteria.child].copyOf(
-            xpath_id=processed_count
-        ) # sets xpath_id to the processed count for the new criteria
-        self.command_stack.push(new_crit)
-        current_criteria.setChildCount(current_criteria.childCount-1)
 
     def remove_self(self, curr_crit: Criteria):
         """Remove the current criteria from the dictionary"""

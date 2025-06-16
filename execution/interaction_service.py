@@ -39,6 +39,28 @@ class InteractionService:
 
 
 
+    def _initialize_function_map(self):
+            return {
+                'open_site': self.interaction_service._open_website,
+                'go_back': self.interaction_service._go_back,
+                'basic_click': self.interaction_service._click,
+                'strong_click': self.interaction_service._strong_click,
+                'enter_string': self.interaction_service._enter_string,
+                'test_command': self.interaction_service._test,
+                'scroll_view': self.interaction_service._scroll_into_view,
+                'fast_find': self.interaction_service._find_element,
+                'fast_find_multiple': self.interaction_service._find_elements,
+                'wait_find': self.interaction_service._wait_for_element_presence,
+                'wait_click': self.interaction_service._wait_for_element_clickable,
+                'local_finds': self.interaction_service._find_local_elements,
+                'local_find': self.interaction_service._find_local_element,
+                'self_find': self.interaction_service._find_self,
+                'wait_find_self': self.interaction_service._wait_find_self,
+                'print_text': self.interaction_service._print_text,
+                'add_to_table': self.interaction_service._get_price,
+                'sleep': self.interaction_service._sleep,
+                'debug_print': self.interaction_service._debug,
+            }
 
 
 
@@ -167,6 +189,44 @@ class InteractionService:
     def _go_back(self):
         self.driver.back()
 
+
+    def smart_find_elements(self, locator, parent_element=None, timeout=10):
+        """
+        Consolidated find elements function that tries:
+        1. Wait-based global find first
+        2. Wait-based local find (if parent provided)
+        3. Returns empty list if neither succeeds
+        
+        Args:
+            locator: XPath string (should work for both global and local)
+            parent_element: Optional parent WebElement for local search
+            timeout: Maximum wait time in seconds
+            
+        Returns:
+            List of WebElements if found, empty list otherwise
+        """
+        def _wait_find_elements(search_context, xpath):
+            try:
+                # Wait for at least one element to be present
+                WebDriverWait(search_context, timeout).until(
+                    EC.presence_of_element_located((By.XPATH, xpath)))
+                # Then return all matching elements
+                return search_context.find_elements(By.XPATH, xpath)
+            except TimeoutException:
+                return []
+                
+        # First try global find
+        elements = _wait_find_elements(self.driver, locator)
+        if elements:
+            return elements
+            
+        # If global fails and parent provided, try local find
+        if parent_element is not None:
+            # Convert to local XPath if not already
+            local_locator = locator if locator.startswith('.') else f'.{locator}'
+            return _wait_find_elements(parent_element, local_locator)
+        
+        return []
 
 # SELENIUM FUNCTIONS
 
@@ -299,4 +359,8 @@ class InteractionService:
         self.driver.quit()
 
     
+
+
+
+
 
