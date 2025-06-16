@@ -1,0 +1,7 @@
+Data will be in json format. See sample_data
+Read data to get commands which will be executed in order according to the json.
+Find Commands in the actions/next parts of the steps will add criteria to the stack to be executed.
+Criteria may not be nececcary and might be an extra layer from extracting commands from db to execution but having an object in the middle allows for future flexibility
+Criteria WILL have a WebElement property that will be populated when the parent runs its next section. should be overwritten with find action, 
+    or have the option of overwriting with find action only if something goes wrong
+When a parent calls find on the next, populate the next criteria's webElement with the parent's next by default.
