@@ -1,0 +1,17 @@
+{
+  "_id": "https://www.ruleofnext.com/",
+  "name": "Search and Extract Product Info",
+  "steps": [
+    {
+      "xpath": "//a[contains(@class, 'header-controls__search')]",
+      "actions": ["wait_find_self", "strong_click"],
+      "next": {
+        "xpath": "//a[contains(@class, 'header-controls__search')]",
+        "actions": ["wait_find"]
+      },
+      "start_trigger": true
+    }
+  ]
+}
+
+

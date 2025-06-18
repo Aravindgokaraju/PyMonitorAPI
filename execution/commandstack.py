@@ -27,3 +27,9 @@ class CommandStack:
 
     def __str__(self):
         return str(self.stack)
+    def get_stack_info(self):
+        return [{
+            'xpath': c.xpath,
+            'action_progress': f"{c.actionCount}/{len(c.actions)}",
+            'child_count': c.childCount
+        } for c in self.stack]

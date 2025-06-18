@@ -41,25 +41,22 @@ class InteractionService:
 
     def _initialize_function_map(self):
             return {
-                'open_site': self.interaction_service._open_website,
-                'go_back': self.interaction_service._go_back,
-                'basic_click': self.interaction_service._click,
-                'strong_click': self.interaction_service._strong_click,
-                'enter_string': self.interaction_service._enter_string,
-                'test_command': self.interaction_service._test,
-                'scroll_view': self.interaction_service._scroll_into_view,
-                'fast_find': self.interaction_service._find_element,
-                'fast_find_multiple': self.interaction_service._find_elements,
-                'wait_find': self.interaction_service._wait_for_element_presence,
-                'wait_click': self.interaction_service._wait_for_element_clickable,
-                'local_finds': self.interaction_service._find_local_elements,
-                'local_find': self.interaction_service._find_local_element,
-                'self_find': self.interaction_service._find_self,
-                'wait_find_self': self.interaction_service._wait_find_self,
-                'print_text': self.interaction_service._print_text,
-                'add_to_table': self.interaction_service._get_price,
-                'sleep': self.interaction_service._sleep,
-                'debug_print': self.interaction_service._debug,
+                'open_site': self._open_website,
+                'go_back': self._go_back,
+                'basic_click': self._click,
+                'strong_click': self._strong_click,
+                'enter_string': self._enter_string,
+                'test_command': self._test,
+                'scroll_view': self._scroll_into_view,
+                'fast_find': self._find_element,
+                'fast_find_multiple': self._find_elements,
+                'wait_find': self._wait_for_element_presence,
+                'wait_click': self._wait_for_element_clickable,
+                'wait_find_self': self._wait_find_self,
+                'print_text': self._print_text,
+                'add_to_table': self._get_price,
+                'sleep': self._sleep,
+                'debug_print': self._debug,
             }
 
 
@@ -77,14 +74,13 @@ class InteractionService:
     # OPEN WEBSITE
     def _open_website(self, websiteURL):
         """Opens a given website using the driver."""
+        print(f"Opening website: {websiteURL}")
         self.driver.get(websiteURL)
-        print(f"Opened website: {websiteURL}")
+        print(f"Current URL: {self.driver.current_url}")
     
 
     # FAST FIND ELEMENT
     # not used in practice
-    def _find_self(self,criterion):
-        criterion.webElement =self.driver.find_element(criterion.xpath)
     
     def _wait_find_self(self, criterion):
         path = criterion.xpath
@@ -116,19 +112,6 @@ class InteractionService:
     def _find_elements(self,nextPath):
         return self.driver.find_elements(By.XPATH, nextPath)
     
-    def _find_local_element(criterion,nextPath,itemNo = 0):
-        critElem = criterion.webElement
-        indexed_path = f"({nextPath})[{itemNo + 1}]"
-        return critElem.find_element(By.XPATH, indexed_path)
-    
-    def _find_local_elements(criterion,nextPath,itemNo = 0):
-        critElem = criterion.webElement
-        elements:list = critElem.find_elements(By.XPATH,nextPath)
-        if(itemNo ==0):
-            return elements
-        else:
-            return elements[:itemNo]
-
 
 
     #TODO: See if I need to pass in criteria or if I can just pass in xpath

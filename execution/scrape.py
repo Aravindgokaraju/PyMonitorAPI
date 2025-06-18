@@ -1,17 +1,24 @@
+import json
+import os
 import re
+
 import traceback
 from typing import Any, Dict, List, Tuple, Optional
 
-from execution.models import SKU
-from execution.mongo_service import MongoService
+# from execution.mongo_service import MongoService
 from .interaction_service import InteractionService
 from .scraping_models import Criteria, Website
 from .commandstack import CommandStack
 
+# from execution.scrape import ScrapingService
+# scraper = ScrapingService()
+# scraper.scrape_websites()
 class ScrapingService:
     def __init__(self):
         self.interaction_service = InteractionService()
-        self.mongo_service = MongoService()
+        self.function_map = self.interaction_service._initialize_function_map()
+
+        # self.mongo_service = MongoService()
         self.command_stack = CommandStack()
         self.criteria_dict: Dict[str, Criteria] = {} #TODO: legacy variable, delete later
         self.parent_pair: Dict[str,str] = {}
@@ -19,7 +26,6 @@ class ScrapingService:
         self.cachedWebsites=""
         
         # Initialize function map
-        self.function_map = self.interaction_service._initialize_function_map()
 
 
     def scrape_websites(self) -> List[Tuple[str, str, str]]:
@@ -43,16 +49,54 @@ class ScrapingService:
         finally:
             self.interaction_service.quit()
 
-    def _get_sku_data(self) -> List[List[str]]:  # list of skus with each sku having a name, id, and number
-        """Get SKU data from database"""
-        skus = SKU.objects.all().values_list('sku_number', 'name', 'id')  # or whatever fields you need
-        return [list(sku) for sku in skus]
-
-    def _get_websites_data(self) -> List[Dict[str, Any]]:   #List of dicts each dict is a website, which has its own steps, actions, next, name etc
-        """Get website data from Google Sheets and convert to Website objects"""
-        website_data = self.mongo_service._get_websites_data()
-        return website_data
+    def _get_sku_data(self) -> List[Dict[str, Any]]:
+        """Get SKU data - temporarily using test data"""
+        return [
+            {"sku_id": "12345", "name": "Test Product 1", "id": "1"},
+            {"sku_id": "67890", "name": "Test Product 2", "id": "2"}
+        ]
         
+        # Original implementation:
+        # skus = SKU.objects.all().values_list('sku_number', 'name', 'id')
+        # return [list(sku) for sku in skus]
+
+    def _get_websites_data(self) -> List[Dict[str, Any]]:
+        """Get website data - temporarily using test data"""
+        # TODO: Replace this with actual MongoDB call when ready
+        return self._get_test_website_data()
+        
+        # Original implementation:
+        # website_data = self.mongo_service._get_websites_data()
+        # return website_data
+    
+    def _get_test_website_data(self) -> List[Dict[str, Any]]:
+        """Read test website data from JSON file in the same directory"""
+        # Get the directory of the current script
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        test_file = os.path.join(current_dir, 'test_data.json')
+        
+        try:
+            with open(test_file, 'r', encoding='utf-8') as f:
+                test_data = json.load(f)
+                
+            # Convert the steps into criteria dictionary format
+            self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
+            
+            # Return the test data in the expected format
+            return [{
+                "id": test_data["_id"],
+                "name": test_data["name"],
+                "steps": test_data["steps"],
+                "url": test_data["url"],
+                "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
+            }]
+        except FileNotFoundError:
+            raise Exception(f"Test data file not found at: {test_file}")
+        except json.JSONDecodeError:
+            raise Exception(f"Invalid JSON format in test data file: {test_file}")
+        except KeyError as e:
+            raise Exception(f"Missing required field in test data: {e}")
+
 
     def _process_website(self, website_data:Dict[str, Any], skus: List[List[str]], table_data: List):
         """Process a single website with all SKUs"""
@@ -75,12 +119,22 @@ class ScrapingService:
 
     def _process_sku(self, website_data: Dict[str, Any], sku: str, table_data: List):
         """Process a single SKU for a website"""
+        print(f"Processing SKU: {sku} for website: {website_data['url']}")
+        print(f"Website data: {website_data}")
         sku_data = []
         #initial_criteria = self.criteria_dict[website.criteriaList[self.start_index].xpath].copyOf()
         #initial_criteria = Criteria(website_data["steps"].hasProperty("init==true")) # Criteria will store its actions as well as its xpath removing need for global actions managment
         #Initial should be read from criteria dictionary
-        initial_criteria = self.criteria_dict[website_data["steps"].hasProperty("init==true").xpath]
+        initial_step = next(
+        step for step in website_data["steps"] 
+        if step.get("start_trigger", False)
+        )
+        initial_criteria = self.criteria_dict[initial_step["xpath"]]
+        print(f"Initial criteria selected: {initial_criteria}")
+
         self.command_stack.push(initial_criteria)
+        print(f"Command stack after push: {[c.xpath for c in self.command_stack.stack]}")
+
         
         try:
             while not self.command_stack.is_empty():
@@ -89,6 +143,7 @@ class ScrapingService:
                 
                 # Find the web element for this criterion
                 webElement = self.interaction_service.smart_find(self.criteria_dict, criterion.xpath)
+                criterion.webElement = webElement
                 
                 # Process all actions for this criterion
                 while criterion.actionCount < len(criterion.actions):
@@ -112,7 +167,6 @@ class ScrapingService:
                         self.command_stack.pop()
                         
                         # Perform the final act operation
-                        criterion.act(webElement, sku)
                         continue  # Skip the break below
                     
                     # If we get here, the stack changed mid-processing
@@ -145,13 +199,22 @@ class ScrapingService:
     #         command(criterion)
             
     #     criterion.setActionCount(criterion.actionCount + 1)
-    def _execute_action(self, criterion: Criteria, action: str, sku: str, sku_data: List):
-        """Execute a single action from criteria"""
-        command = self._parse_action(action)
-        if action == "enter_string":
-             command(criterion, sku)
-        else:
-            command(criterion)
+    def _execute_action(self, criterion, action, sku, sku_data):
+        print(f"Executing action: {action} on criteria: {criterion.xpath}")
+        print(f"Criteria details: {criterion}")
+        print(f"Current action count: {criterion.actionCount}/{len(criterion.actions)}")
+        
+        try:
+            command = self._parse_action(action)
+            if action == "enter_string":
+                command(criterion, sku)
+            else:
+                command(criterion)
+        except Exception as e:
+            print(f"Error executing action {action}: {str(e)}")
+            raise
+
+
         # the loop over the criteria actions handles this I think
         # if(criterion.childCount==0):
         #     criterion.setActionCount(criterion.actionCount + 1)
@@ -171,10 +234,15 @@ class ScrapingService:
             new_crit = self.criteria_dict[current_criteria.child].copyOf(
                 xpath_id=processed_count
             ) # sets xpath_id to the processed count for the new criteria
+            #TODO: execute next actions before pushing
+            self.execute_next_actions(current_criteria)
             self.command_stack.push(new_crit)
-            current_criteria.setChildCount(current_criteria.childCount-1)
+            current_criteria.childCount = current_criteria.childCount-1
 
-
+    def execute_next_actions(self,criterion):
+        for action_label in criterion.next_actions:
+            next_command = self._parse_action(action_label)
+            next_command(criterion)
     def remove_self(self, curr_crit: Criteria):
         """Remove the current criteria from the dictionary"""
         self.criteria_dict.pop(curr_crit.xpath, None)
@@ -200,34 +268,22 @@ class ScrapingService:
 
     @staticmethod
     def steps_to_criteria_dict(steps: List[dict]) -> Dict[str, 'Criteria']:
-        """
-        Converts a list of step dictionaries into a dictionary of Criteria objects.
-        
-        Args:
-            steps: List of step dictionaries containing xpath, actions, and next info
-            
-        Returns:
-            Dictionary where keys are xpaths and values are corresponding Criteria objects
-        """
         criteria_dict = {}
-        parent_child_map = {}  # Temporary storage for parent-child relationships
         
         # First pass: Create all Criteria objects
         for step in steps:
-            commands = [step['xpath']] + step.get('actions', [])
-            criteria = Criteria(commands)
-            
-            # Store parent-child relationships if next exists
-            if 'next' in step:
-                parent_child_map[step['xpath']] = step['next']['xpath']
-            
+            criteria = Criteria(step)  # Now accepts the full step dict
             criteria_dict[step['xpath']] = criteria
         
-        # Second pass: Establish parent-child relationships
-        for parent_xpath, child_xpath in parent_child_map.items():
-            if parent_xpath in criteria_dict and child_xpath in criteria_dict:
-                criteria_dict[parent_xpath].child = child_xpath
-                criteria_dict[child_xpath].parent = parent_xpath
+        # Second pass: Link parents/children
+        for step in steps:
+            if 'next' in step:
+                parent = criteria_dict[step['xpath']]
+                child_xpath = step['next']['xpath']
+                
+                if child_xpath in criteria_dict:
+                    parent.child = child_xpath
+                    criteria_dict[child_xpath].parent = parent.xpath
         
         return criteria_dict
 
