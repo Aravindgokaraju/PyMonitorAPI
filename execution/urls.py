@@ -9,5 +9,5 @@ router.register(r'pricedata', views.PriceDataViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('execute',)
+    path('execute/', views.execute_scraping, name='execute-scraping'),
 ]

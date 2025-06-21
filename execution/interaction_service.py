@@ -53,6 +53,7 @@ class InteractionService:
                 'wait_find': self._wait_for_element_presence,
                 'wait_click': self._wait_for_element_clickable,
                 'wait_find_self': self._wait_find_self,
+                'smart_find':self.smart_find,
                 'print_text': self._print_text,
                 'add_to_table': self._get_price,
                 'sleep': self._sleep,
@@ -133,7 +134,7 @@ class InteractionService:
 
     
         
-    def smart_find(self, locator, parent_element=None, timeout=10):
+    def smart_find(self, criteria_dict, locator, parent_element=None, timeout=10):
         """
         Consolidated find function that tries:
         1. Wait-based global find first
@@ -150,20 +151,27 @@ class InteractionService:
         """
         def _wait_find(search_context, xpath):
             try:
+                print("search context, ",search_context)
+                print("xpath, ",xpath)
                 return WebDriverWait(search_context, timeout).until(
                     EC.presence_of_element_located((By.XPATH, xpath)))
             except TimeoutException:
+                print("TimeOut Exception on FInd")
                 return None
-            
+        print("global find")
         # First try global find
         element = _wait_find(self.driver, locator)
         if element:
+            print("ELEMENT FOUND locator:",locator)
             return element
+        print("local find find")
         
         # If global fails and parent provided, try local find
         if parent_element is not None:
             # Convert to local XPath if not already
             local_locator = locator if locator.startswith('.') else f'.{locator}'
+            print("ELEMENT FOUND local_locator:",local_locator)
+
             return _wait_find(parent_element, local_locator)
         
         return None

@@ -1,17 +1,58 @@
 {
   "_id": "https://www.ruleofnext.com/",
-  "name": "Search and Extract Product Info",
+  "name": "TEST SET OF DATA DICT THINGY",
+  "url": "https://www.ruleofnext.com/", 
+
   "steps": [
     {
       "xpath": "//a[contains(@class, 'header-controls__search')]",
-      "actions": ["wait_find_self", "strong_click"],
+      "actions": ["strong_click","add_next"],
       "next": {
-        "xpath": "//a[contains(@class, 'header-controls__search')]",
-        "actions": ["wait_find"]
+        "xpath": "//input[contains(@class, 'predictive-search__input')]",
+        "actions": []
       },
       "start_trigger": true
+    },
+    {
+      "xpath": "//input[contains(@class, 'predictive-search__input')]",
+      "actions": ["strong_click","enter_string","add_next"],
+      "next": {
+        "xpath": "//a[contains(@class, 'product-thumbnail__link')]",
+        "actions": []
+      }
+    },
+    {
+      "xpath": "//a[contains(@class, 'product-thumbnail__link')]",
+      "actions": ["scroll_view","strong_click","add_next"],
+      "next": {
+        "xpath": "//span[contains(@class,'price-container__price')]",
+        "actions": []
+      }
+    },
+    {
+      "xpath": "//span[contains(@class,'price-container__price')]",
+      "actions": ["scroll_view","add_to_table"],
+      "next": {
+        "xpath": "//span[contains(@class,'price-container__price')]",
+        "actions": []
+      }
     }
-  ]
+  ],
+    "interruptions": [
+        {
+        "name": "cookie_banner",
+        "xpath": "//div[@id='cookie-banner']",
+        "actions": ["click", "wait_until_hidden"],
+        "trigger": {
+            "on": "on_error"
+        },
+        "retry": {
+            "attempts": 3,
+            "delay_ms": 1000,
+            "strategy": "linear"  
+        }
+        }
+    ]
 }
 
 

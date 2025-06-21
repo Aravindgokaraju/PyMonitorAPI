@@ -28,6 +28,7 @@ class Website:
         self.url = siteName
 
 
+
 class Criteria:
     def __init__(self, step_data: dict):  # Changed from commands:list to step_data:dict
         """
@@ -91,27 +92,43 @@ class Criteria:
         
         return new_criteria
 
-    def setActionCount(self, newCount):
-        self.actionCount = newCount
+    # def copyWith(self, **kwargs):
+    #     """Enhanced copy with overrides that preserves all relationships but resets action state"""
+    #     new_data = {
+    #         'xpath': kwargs.get('xpath', self.xpath),
+    #         'actions': self.actions.copy(),  # Original actions preserved
+    #         'next': {
+    #             'xpath': kwargs.get('child', self.child),
+    #             'actions': self.next_actions.copy()
+    #         } if self.child else {}
+    #     }
+        
+    #     new_criteria = Criteria(new_data)
+        
+    #     # Reset action state for new processing
+    #     new_criteria.actionCount = 0
+    #     new_criteria.childCount = -1
+        
+    #     # Set additional attributes
+    #     new_criteria.xpath_id = kwargs.get('xpath_id', self.xpath_id)
+    #     new_criteria.parent = kwargs.get('parent', self.parent)
+        
+    #     return new_criteria
     
-    def setChildCount(self, newCount):
-        self.childCount = newCount
+    # def setActionCount(self, newCount):
+    #     self.actionCount = newCount
+    
+    # def setChildCount(self, newCount):
+    #     self.childCount = newCount
 
-    def __repr__(self):
-        return (f"Criteria(xpath='{self.xpath}', "
-                f"actions={self.actions}, "
-                f"next_actions={self.next_actions}, "
-                f"child='{self.child}')")
-    def get_debug_info(self):
-        return {
-            'xpath': self.xpath,
-            'actions': self.actions,
-            'current_action_index': self.actionCount,
-            'child_xpath': self.child,
-            'child_count': self.childCount,
-            'next_actions': self.next_actions,
-            'web_element': bool(self.webElement)
-        }
+    # def __repr__(self):
+    #     return (f"Criteria(xpath='{self.xpath}', "
+    #         f"actions={self.actions}, "
+    #         f"current_action_index={self.actionCount}, "
+    #         f"child_xpath='{self.child}', "
+    #         f"child_count={self.childCount}, "
+    #         f"next_actions={self.next_actions}, "
+    #         f"web_element={bool(self.webElement)})")
 # class Criteria:
     
 #     def __init__(self, commands:list):
