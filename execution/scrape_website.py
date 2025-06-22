@@ -3,6 +3,7 @@ import json
 import os
 import re
 
+import time
 import traceback
 from typing import Any, Dict, List, Tuple, Optional
 
@@ -19,7 +20,7 @@ from .commandstack import CommandStack
 class ScrapingService:
     def __init__(self):
         self.interaction_service = InteractionService()
-        self.interruption_handler = InterruptionHandler()
+        self.interruption_handler = InterruptionHandler(self.interaction_service)
         self.function_map = self.interaction_service._initialize_function_map()
 
         # self.mongo_service = MongoService()
@@ -56,8 +57,8 @@ class ScrapingService:
     def _get_sku_data(self) -> List[Dict[str, Any]]:
         """Get SKU data - temporarily using test data"""
         return [
-            {"sku_id": "HM9604-400", "name": "Test Product 1", "id": "1"},
-            {"sku_id": "HJ7654-400", "name": "Test Product 2", "id": "2"}
+            {"sku_id": "HF9117-400", "name": "Test Product 1", "id": "1"},
+            {"sku_id": "DD8959-100", "name": "Test Product 2", "id": "2"}
         ]
         
         # Original implementation:
@@ -73,6 +74,33 @@ class ScrapingService:
         # website_data = self.mongo_service._get_websites_data()
         # return website_data
     
+    # def _get_test_website_data(self) -> List[Dict[str, Any]]:
+    #     """Read test website data from JSON file in the same directory"""
+    #     # Get the directory of the current script
+    #     current_dir = os.path.dirname(os.path.abspath(__file__))
+    #     test_file = os.path.join(current_dir, 'test_data')
+        
+    #     try:
+    #         with open(test_file, 'r', encoding='utf-8') as f:
+    #             test_data = json.load(f)
+                
+    #         # Convert the steps into criteria dictionary format
+    #         self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
+            
+    #         # Return the test data in the expected format
+    #         return [{
+    #             "id": test_data["_id"],
+    #             "name": test_data["name"],
+    #             "steps": test_data["steps"],
+    #             "url": test_data["url"],
+    #             "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
+    #         }]
+    #     except FileNotFoundError:
+    #         raise Exception(f"Test data file not found at: {test_file}")
+    #     except json.JSONDecodeError:
+    #         raise Exception(f"Invalid JSON format in test data file: {test_file}")
+    #     except KeyError as e:
+    #         raise Exception(f"Missing required field in test data: {e}")
     def _get_test_website_data(self) -> List[Dict[str, Any]]:
         """Read test website data from JSON file in the same directory"""
         # Get the directory of the current script
@@ -86,12 +114,21 @@ class ScrapingService:
             # Convert the steps into criteria dictionary format
             self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
             
+            # Ensure interruptions exists and is a list
+            interruptions = test_data.get("interruptions", [])
+            if not isinstance(interruptions, list):
+                print(f"Warning: interruptions should be a list, got {type(interruptions)}. Converting to empty list.")
+                interruptions = []
+            
+            print(f"Loaded {len(interruptions)} interruptions from test data")
+                
             # Return the test data in the expected format
             return [{
                 "id": test_data["_id"],
                 "name": test_data["name"],
                 "steps": test_data["steps"],
                 "url": test_data["url"],
+                "interruptions": interruptions,  # Explicitly include interruptions
                 "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
             }]
         except FileNotFoundError:
@@ -99,15 +136,24 @@ class ScrapingService:
         except json.JSONDecodeError:
             raise Exception(f"Invalid JSON format in test data file: {test_file}")
         except KeyError as e:
-            raise Exception(f"Missing required field in test data: {e}")
-
+            if str(e) == "'steps'":
+                raise Exception(f"Missing required 'steps' field in test data")
+            print(f"Warning: Missing optional field {e} in test data. Using defaults.")
+            return [{
+                "id": test_data.get("_id", ""),
+                "name": test_data.get("name", ""),
+                "steps": [],
+                "url": test_data.get("url", ""),
+                "interruptions": test_data.get("interruptions", []),
+                "criteriaList": []
+            }]
 
     def _process_website(self, website_data:Dict[str, Any], skus: List[List[str]], table_data: List):
         """Process a single website with all SKUs"""
         self.command_stack.clear()
         # self.criteria_dict = self._criteria_to_dict(website.criteriaList) set this directly to the db object in sample_data
         self.start_index = 0
-        self.interruption_handler.load_interruptions(website_data.get("interruptions", []))
+        self.interruption_handler.load_interruptions(website_data["interruptions"])
         self.interaction_service._open_website(website_data["id"])
         
         for full_sku in skus:
@@ -258,6 +304,7 @@ class ScrapingService:
                     raise
                 print(f"Retrying after error: {str(e)}")
                 # Reset the element reference before retrying
+                #TODO: what if we just not increment action counter instead of this function
                 self._recovery_sequence(criterion, e, action)
 
 
@@ -304,14 +351,15 @@ class ScrapingService:
             element = self.interaction_service.smart_find(
                 self.criteria_dict,
                 criterion.xpath,
-                xpath_id=getattr(criterion, 'xpath_id', 0)  # Handle indexed elements
+                #TODO: get this done must make find find the right child: xpath_id=getattr(criterion, 'xpath_id', 0)  # Handle indexed elements
             )
         except Exception as e:
             raise Exception(f"Element refresh failed for {criterion.xpath}: {str(e)}")
 
         # 3. Validate element state
-        if not element.is_displayed():
-            self.interaction_service.scroll_to(element)
+        # if not element.is_displayed():
+        #     print("recovery scroll")
+        #     self.interaction_service._scroll_into_view(criterion)
         if not element.is_enabled():
             raise Exception(f"Element {criterion.xpath} exists but is disabled")
 

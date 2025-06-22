@@ -92,6 +92,7 @@ class Criteria:
         
         return new_criteria
 
+
     # def copyWith(self, **kwargs):
     #     """Enhanced copy with overrides that preserves all relationships but resets action state"""
     #     new_data = {

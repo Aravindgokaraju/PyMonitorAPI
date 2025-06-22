@@ -6,7 +6,7 @@
   "steps": [
     {
       "xpath": "//a[contains(@class, 'header-controls__search')]",
-      "actions": ["strong_click","add_next"],
+      "actions": ["scroll_view","strong_click","add_next"],
       "next": {
         "xpath": "//input[contains(@class, 'predictive-search__input')]",
         "actions": []
@@ -15,7 +15,7 @@
     },
     {
       "xpath": "//input[contains(@class, 'predictive-search__input')]",
-      "actions": ["strong_click","enter_string","add_next"],
+      "actions": ["scroll_view","strong_click","enter_string","add_next"],
       "next": {
         "xpath": "//a[contains(@class, 'product-thumbnail__link')]",
         "actions": []
@@ -41,8 +41,8 @@
     "interruptions": [
         {
         "name": "cookie_banner",
-        "xpath": "//div[@id='cookie-banner']",
-        "actions": ["click", "wait_until_hidden"],
+        "xpath": "//button[@class='needsclick klaviyo-close-form go2324193863 kl-private-reset-css-Xuajs1']",
+        "actions": ["strong_click"],
         "trigger": {
             "on": "on_error"
         },

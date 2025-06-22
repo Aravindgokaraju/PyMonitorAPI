@@ -237,9 +237,10 @@ class InteractionService:
         print(webElement.text)
 
     def _get_price(self,criterion):
-        print("Appending Data")
+        
         webElement = criterion.webElement
         ans = self.extract_price(webElement.text)
+        print("Appending Data ",ans)
         if(ans):
             return ans
         else: return -1
@@ -279,10 +280,31 @@ class InteractionService:
 # JAVASCRIPT HARD FUNCTIONS
 
     # JAVASCRIPT CLICK
-    def _strong_click(self,criterion):
-        webElement = criterion.webElement
-        self.driver.execute_script("arguments[0].click();", webElement)
-        #time.sleep(5)
+    def _strong_click(self, target):
+        """
+        Enhanced click method that accepts either:
+        - Criteria object (containing webElement)
+        - Direct WebElement reference
+        
+        Args:
+            target: Either a Criteria object or WebElement
+        """
+        # Extract WebElement based on input type
+        web_element = target.webElement if hasattr(target, 'webElement') else target
+        
+        # Verify we have a valid WebElement
+        if not isinstance(web_element, WebElement):
+            raise TypeError("Target must be either Criteria object or WebElement")
+        
+        try:
+            # First attempt regular click
+            web_element.click()
+        except Exception as e:
+            # Fallback to JavaScript click
+            try:
+                self.driver.execute_script("arguments[0].click();", web_element)
+            except Exception as js_e:
+                raise Exception(f"Both native and JS click failed: {str(e)} -> {str(js_e)}")
 
     def _scroll_into_view(self,criterion):
         webElement = criterion.webElement
