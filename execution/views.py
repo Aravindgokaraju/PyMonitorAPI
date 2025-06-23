@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from execution.scrape_website import ScrapingService
-from .models import Website, SKU, PriceData
+from .models import Website, SKU, PriceData, save_scraping_config
 from .serializers import WebsiteSerializer, SKUSerializer, PriceDataSerializer
 
 class WebsiteViewSet(viewsets.ModelViewSet):
@@ -73,6 +74,29 @@ def execute_scraping(request):
         
     except Exception as e:
         logger.error(f"Scraping failed: {str(e)}", exc_info=True)
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['POST'])
+def save_scraping_config_view(request):
+    try:
+        # DRF automatically parses JSON body into request.data
+        # inserted_id = save_scraping_config(request.data)
+        inserted_id = save_scraping_config(request.data)
+        return Response({
+            'status': 'success',
+            'inserted_id': str(inserted_id)
+        }, status=status.HTTP_201_CREATED)
+        
+    except json.JSONDecodeError:
+        return Response({
+            'status': 'error',
+            'message': 'Invalid JSON format'
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
         return Response({
             'status': 'error',
             'message': str(e)

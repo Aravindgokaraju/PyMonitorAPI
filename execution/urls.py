@@ -9,5 +9,6 @@ router.register(r'pricedata', views.PriceDataViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('api/save-scraping-config/', views.save_scraping_config_view, name='save_scraping_config'),
     path('execute/', views.execute_scraping, name='execute-scraping'),
 ]

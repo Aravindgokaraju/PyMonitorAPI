@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Website, SKU, PriceData
+from .models import ScrapingResult, Website, SKU, PriceData
 
 class WebsiteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,3 +20,25 @@ class PriceDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceData
         fields = ['id', 'sku', 'website', 'sku_id', 'website_id', 'price', 'last_updated']
+
+class ScrapingResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScrapingResult
+        fields = [
+            'id',
+            'url',
+            'sku',
+            'price',
+            'element_text',
+            'timestamp',
+            'website',
+            'is_success',
+            'error_message'
+        ]
+        read_only_fields = ['timestamp']
+
+    def create(self, validated_data):
+        """
+        Custom create to handle the table_data format
+        """
+        return ScrapingResult.objects.create(**validated_data)
