@@ -446,6 +446,8 @@ class ScrapingService:
         #     return self.add_next_crit
         elif action == "remove_self":
             return self.remove_self
+        elif action == "clear_stack":
+            return self.command_stack.clear()  # Add this line
         else:
             return lambda *args, **kwargs: print("Unrecognized command; no action taken.")
         # ... (include all your helper methods like add_nth_child, add_crit_shallow, etc.)

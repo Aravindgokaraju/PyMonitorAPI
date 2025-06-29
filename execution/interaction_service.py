@@ -36,9 +36,36 @@ class InteractionService:
         # Initialize ActionChains for performing complex actions
         self.action = ActionChains(self.driver)
 
+        # # Standard stealth options
+        # chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        # chrome_options.add_experimental_option("useAutomationExtension", False)
+        
+        # # Disable automation flags
+        # chrome_options.add_argument('--disable-infobars')
+        # chrome_options.add_argument('--disable-notifications')
+        # chrome_options.add_argument('--disable-popup-blocking')
+        
+        # # Randomize window size
+        # chrome_options.add_argument(f"--window-size={random.randint(1000,1400)},{random.randint(800,1000)}")
 
+        # Load real Chrome profile (optional)
+        # chrome_options.add_argument(f"--user-data-dir=/path/to/profile")
+        # user_agents = [
+        #     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...",
+        #     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)..."
+        # ]
+        # chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
 
-
+        # self.driver.execute_cdp_cmd(
+        # "Page.addScriptToEvaluateOnNewDocument", {
+        #     "source": """
+        #         Object.defineProperty(navigator, 'webdriver', {
+        #             get: () => undefined
+        #         })
+        #     """
+        #     }
+        # )
     def _initialize_function_map(self):
             return {
                 'open_site': self._open_website,
@@ -52,7 +79,7 @@ class InteractionService:
                 'fast_find_multiple': self._find_elements,
                 'wait_find': self._wait_for_element_presence,
                 'wait_click': self._wait_for_element_clickable,
-                'wait_find_self': self._wait_find_self,
+                # 'wait_find_self': self._wait_find_self,
                 'smart_find':self.smart_find,
                 'print_text': self._print_text,
                 'add_to_table': self._get_price,
@@ -68,7 +95,8 @@ class InteractionService:
 
     #DEBUG FUNCTIONS
     def _sleep(self,criterion):
-        time.sleep(10)
+        time.sleep(10000)
+
     def _debug(self,criterion):
         print("DEBUG COMMAND")
 
@@ -83,35 +111,36 @@ class InteractionService:
     # FAST FIND ELEMENT
     # not used in practice
     
-    def _wait_find_self(self, criterion):
-        path = criterion.xpath
-        print(f"Using XPath: {path}")
+    # def _wait_find_self(self, criterion):
+    #     path = criterion.xpath
+    #     print(f"Using XPath: {path}")
     
-        try:
-            criterion.webElement = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, path))
-            )
-            print("Element found successfully")
-            return True
-        except TimeoutException:
-            print(f"\nERROR: Timed out after 10 seconds while waiting for element with XPath: {path}")
-            print("Possible reasons:")
-            print("- The element doesn't exist")
-            print("- The XPath is incorrect")
-            print("- The page took too long to load")
-            print("- The element is in an iframe")
-            return False
-        except Exception as e:
-            print(f"\nERROR: An unexpected error occurred while waiting for element: {str(e)}")
-            return False
-    def _find_element(self,nextPath,itemNo=0):
-        """Finds element"""
-        indexed_path = f"({nextPath})[{itemNo + 1}]"
-        return self.driver.find_element(By.XPATH, indexed_path)
+    #     try:
+    #         criterion.webElement = WebDriverWait(self.driver, 10).until(
+    #             EC.presence_of_element_located((By.XPATH, path))
+    #         )
+    #         print("Element found successfully")
+    #         return True
+    #     except TimeoutException:
+    #         print(f"\nERROR: Timed out after 10 seconds while waiting for element with XPath: {path}")
+    #         print("Possible reasons:")
+    #         print("- The element doesn't exist")
+    #         print("- The XPath is incorrect")
+    #         print("- The page took too long to load")
+    #         print("- The element is in an iframe")
+    #         return False
+    #     except Exception as e:
+    #         print(f"\nERROR: An unexpected error occurred while waiting for element: {str(e)}")
+    #         return False
+
+    # def _find_element(self,nextPath,itemNo=0):
+    #     """Finds element"""
+    #     indexed_path = f"({nextPath})[{itemNo + 1}]"
+    #     return self.driver.find_element(By.XPATH, indexed_path)
     
     
-    def _find_elements(self,nextPath):
-        return self.driver.find_elements(By.XPATH, nextPath)
+    # def _find_elements(self,nextPath):
+    #     return self.driver.find_elements(By.XPATH, nextPath)
     
 
 
@@ -122,7 +151,8 @@ class InteractionService:
         """waits until the desired element gets detected"""
         return WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, nextPath))
-        )     
+        )
+       
     #WAIT TIL ELEMENT CLICKABLE
     #TODO: same as wait find but passing in path?
     def _wait_for_element_clickable(self, nextPath):
@@ -234,7 +264,7 @@ class InteractionService:
     
     def _print_text(self,criterion):
         webElement = criterion.webElement
-        print(webElement.text)
+        print("Printing text",webElement.text)
 
     def _get_price(self,criterion):
         

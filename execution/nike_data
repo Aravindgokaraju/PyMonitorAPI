@@ -1,0 +1,48 @@
+{
+  "_id": "https://www.nike.com/",
+  "name": "TEST SET OF DATA DICT THINGY",
+  "url": "https://www.nike.com/", 
+
+  "steps": [
+    {
+      "xpath": "//button[contains(@class, 'nds-btn nds-button--icon-only search-start-btn css-1pto8ls ex41m6f0 btn-secondary-dark ')]",
+      "actions": ["scroll_view","strong_click","add_next"],
+      "next": {
+        "xpath": "//input[contains(@class, 'search-input')]",
+        "actions": []
+      },
+      "start_trigger": true
+    },
+    {
+      "xpath": "//input[contains(@class, 'search-input')]",
+      "actions": ["scroll_view","strong_click","enter_string","add_next"],
+      "next": {
+        "xpath": "//a[contains(@class, 'product-card__img-link-overlay')]",
+        "actions": []
+      }
+    },
+    {
+      "xpath": "//a[contains(@class, 'product-card__img-link-overlay')]",
+      "actions": ["scroll_view","strong_click","add_next"],
+      "next": {
+        "xpath": "//span[contains(@class, 'nds-text mr2-sm css-tbgmka e1yhcai00 text-align-start appearance-body1Strong color-primary display-inline weight-regular')]",
+        "actions": []
+      }
+    },
+    {
+      "xpath": "//span[contains(@class, 'nds-text mr2-sm css-tbgmka e1yhcai00 text-align-start appearance-body1Strong color-primary display-inline weight-regular')]",
+      "actions": ["scroll_view","print_text","add_next"],
+      "next": {
+        "xpath": "//a[contains(@class, 'swoosh-link')]",
+        "actions": []
+      }
+    },
+      {
+      "xpath": "//a[contains(@class, 'swoosh-link')]",
+      "actions": ["scroll_view","strong_click","clear_stack"]
+    }
+  ],
+    "interruptions": [
+    ]
+}
+
