@@ -1,6 +1,11 @@
+import os
+import random
 import re
+import tempfile
 import time
-from typing import List
+import undetected_chromedriver as uc  # Add this import
+from typing import List, Union
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
@@ -12,60 +17,156 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import TimeoutException
+from selenium_stealth import stealth
+from execution.browser_config.stable_config import StableConfig
+from execution.browser_config.stealth_config import StealthConfig
+
 
 
 #NO GLOBAL CRITERIA, CRITERIA SHOULD BE PASSED IN FROM MAIN NOT STORED AS A GLOBAL HERE TO BE USED BY THE FUNCTIONS
 
 class InteractionService:
 
-    def __init__(self):
-        # Set up Chrome options
-        chrome_options = Options()
-        chrome_options.add_argument("--ignore-certificate-errors")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        #chrome_options.add_argument("--headless")
-        chrome_options.add_argument('--disable-extensions')  # Disable extensions
-        chrome_options.add_argument('--disable-infobars')  # Disable popups like "Chrome is being controlled by automated software"
-        chrome_options.add_argument("--allow-insecure-localhost")
-        chrome_options.add_argument("--disable-web-security")
-        chrome_options.add_argument("--no-sandbox")
+    #TODO:  Use Firefox with resistFingerprinting=true
+    # Install CanvasBlocker extension
+    # Disable WebGL (about:config → webgl.disabled)
 
-        # Initialize ChromeDriver using ChromeDriverManager
-        self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-        # Initialize ActionChains for performing complex actions
+    def __init__(self, stealth_level='stable'):
+        # Choose configuration based on stealth level
+        if stealth_level == 'stealth':
+            self.config = StealthConfig()
+        else:
+            self.config = StableConfig()
+            
+        # Apply configurations
+        chrome_options = self.config.apply()
+        if isinstance(self.config, StableConfig):
+            self.driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()), 
+                options=chrome_options
+            )
+        else:
+            self.driver = uc.Chrome(
+            options=self.chrome_options,
+            headless=False,
+            use_subprocess=True,
+            version_main=114  # Optional: specify Chrome version
+            )
+            self.config._apply_stealth_measures(self.driver)
+        
+        # Apply additional stealth measures if using stealth config
+        if isinstance(self.config, StealthConfig):
+            self.config._apply_stealth_measures()
+            
         self.action = ActionChains(self.driver)
+    
 
-        # # Standard stealth options
-        # chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        # chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        # chrome_options.add_experimental_option("useAutomationExtension", False)
+
+  
+    # def __init__(self):
+
+    #     user_agents = [
+    #         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...",
+    #         "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)..."
+    #     ]
+    #     proxies = ["12.34.56.78:8080", "23.45.67.89:3128"]
+    
+    #     # Set up Chrome options
+    #     chrome_options = Options()
+    #     chrome_options.add_argument("--ignore-certificate-errors")
+    #     chrome_options.add_argument("--disable-dev-shm-usage")
+    #     #chrome_options.add_argument("--headless")
+    #     chrome_options.add_argument('--disable-extensions')  # Disable extensions
+    #     chrome_options.add_argument('--disable-infobars')  # Disable popups like "Chrome is being controlled by automated software"
+    #     chrome_options.add_argument("--allow-insecure-localhost")
+    #     chrome_options.add_argument("--disable-web-security")
+    #     chrome_options.add_argument("--no-sandbox")
+    #     chrome_options.add_argument("--disable-3d-apis")
+    #     chrome_options.add_argument("--disable-webgl")
+    #     chrome_options.add_argument("--disable-features=WebRtcHideLocalIpsWithMdns")
+    #     # Initialize ChromeDriver using ChromeDriverManager
+    #     self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+
+    #     # Initialize ActionChains for performing complex actions
+    #     self.action = ActionChains(self.driver)
+
+    #     # Standard stealth options
+    #     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    #     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    #     chrome_options.add_experimental_option("useAutomationExtension", False)
         
-        # # Disable automation flags
-        # chrome_options.add_argument('--disable-infobars')
-        # chrome_options.add_argument('--disable-notifications')
-        # chrome_options.add_argument('--disable-popup-blocking')
+    #     # Disable automation flags
+    #     chrome_options.add_argument('--disable-infobars')
+    #     chrome_options.add_argument('--disable-notifications')
+    #     chrome_options.add_argument('--disable-popup-blocking')
         
-        # # Randomize window size
-        # chrome_options.add_argument(f"--window-size={random.randint(1000,1400)},{random.randint(800,1000)}")
 
-        # Load real Chrome profile (optional)
-        # chrome_options.add_argument(f"--user-data-dir=/path/to/profile")
-        # user_agents = [
-        #     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...",
-        #     "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)..."
-        # ]
-        # chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
+    #     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    #     chrome_options.add_argument("--disable-renderer-backgrounding")
+    #     chrome_options.add_argument("--disable-background-timer-throttling")
+    #     # Randomize window size
+    #     chrome_options.add_argument(f"--window-size={random.randint(1000,1400)},{random.randint(800,1000)}")
 
-        # self.driver.execute_cdp_cmd(
-        # "Page.addScriptToEvaluateOnNewDocument", {
-        #     "source": """
-        #         Object.defineProperty(navigator, 'webdriver', {
-        #             get: () => undefined
-        #         })
-        #     """
-        #     }
-        # )
+    #     # Load real Chrome profile (optional)
+  
+   
+    #     chrome_options.add_argument(f'--proxy-server={random.choice(proxies)}')
+    #     chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
+
+    #     chrome_options.add_argument("--use-gl=desktop")  # Force hardware acceleration
+    #     chrome_options.add_argument("--ignore-gpu-blocklist")
+
+    #     # Canvas noise injection script
+    #     canvas_script = """
+    #     const canvas = document.createElement('canvas');
+    #     const ctx = canvas.getContext('2d');
+    #     ctx.textBaseline = 'top';
+    #     ctx.font = '14px Arial';
+    #     ctx.fillStyle = '#f60';
+    #     ctx.fillRect(0, 0, 100, 100);
+    #     ctx.fillStyle = '#069';
+    #     ctx.fillText('Hello World', 2, 15);
+    #     // Add slight noise
+    #     for (let i = 0; i < 10; i++) {
+    #         ctx.fillStyle = `rgba(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255}, 0.2)`;
+    #         ctx.fillRect(
+    #             Math.random()*100, 
+    #             Math.random()*100, 
+    #             Math.random()*10, 
+    #             Math.random()*10
+    #         );
+    #     }
+    #     """
+
+    #     self.driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+    #         "source": f"""
+    #         // Override WebGL
+    #         WebGLRenderingContext.prototype.getParameter = function(parameter) {{
+    #             if (parameter === 37445) return 'Intel Inc.';  // VENDOR
+    #             if (parameter === 37446) return 'Intel Iris OpenGL Engine';  // RENDERER
+    #             return Reflect.apply(...arguments);
+    #         }};
+    #         // Execute canvas script
+    #         {canvas_script}
+    #         """
+    #     })
+    #     self.driver.execute_cdp_cmd(
+    #         "Page.addScriptToEvaluateOnNewDocument", {
+    #             "source": """
+    #                 Object.defineProperty(navigator, 'webdriver', {
+    #                     get: () => undefined
+    #                 })
+    #             """
+    #             }
+    #     )
+    #     self.driver.execute_script("""
+    #         HTMLCanvasElement.prototype.toDataURL = function() {
+    #             return 'data:image/png;base64,SPOOFED_DATA';
+    #         };
+    #         """
+    #     )
+
+
     def _initialize_function_map(self):
             return {
                 'open_site': self._open_website,
@@ -286,23 +387,23 @@ class InteractionService:
 
 # ALERT CLOSING FUNCTIONS
     
-    #CLOSE JAVASCRIPT ALERT
-    def _close_alert(self):
-        try:
-            alert = self.driver.switch_to.alert
-            alert_text = alert.text
-            print(f"Alert text: {alert_text}")
-            alert.dismiss()  # or alert.accept() to confirm
-        except :
-            print("No alert present on the page.")
+    # #CLOSE JAVASCRIPT ALERT
+    # def _close_alert(self):
+    #     try:
+    #         alert = self.driver.switch_to.alert
+    #         alert_text = alert.text
+    #         print(f"Alert text: {alert_text}")
+    #         alert.dismiss()  # or alert.accept() to confirm
+    #     except :
+    #         print("No alert present on the page.")
 
-    #BASIC IFRAME REMOVAL TODO GO IN DEPTH LATER IF NEEDED
-    def _close_iframe(self,criterion):
-        path = criterion.xpath
-        self.driver.switch_to.default_content()
-        # Use JavaScript to remove the iframe
-        iframe_id = path  # Replace with the actual ID or selector of the iframe
-        self.driver.execute_script(f"document.getElementById('{iframe_id}').remove();")
+    # #BASIC IFRAME REMOVAL TODO GO IN DEPTH LATER IF NEEDED
+    # def _close_iframe(self,criterion):
+    #     path = criterion.xpath
+    #     self.driver.switch_to.default_content()
+    #     # Use JavaScript to remove the iframe
+    #     iframe_id = path  # Replace with the actual ID or selector of the iframe
+    #     self.driver.execute_script(f"document.getElementById('{iframe_id}').remove();")
 
     
     
@@ -346,39 +447,148 @@ class InteractionService:
         self.driver.execute_script("document.querySelector('" + criterion.xpath + "').style.display = 'none';")
 
 
+    #HOOMAN Update
+    def human_type(element, text):
+        """Type like a human (with delays and mistakes)"""
+        for char in text:
+            element.send_keys(char)
+            time.sleep(random.uniform(0.05, 0.2))  # Random typing speed
+
+    def human_click(self,element):
+        """Move mouse erratically before clicking"""
+        action = ActionChains(self.driver)
+        action.move_to_element_with_offset(element, random.randint(-5,5), random.randint(-5,5))
+         # Add micro-jitter (1-3 random small movements)
+        for _ in range(random.randint(1, 3)):
+            action.move_by_offset(
+                random.randint(-2, 2),
+                random.randint(-2, 2)
+            ).pause(random.uniform(0.05, 0.1))
+
+        action.move_to_element(element)  # Correct to exact position
+        action.pause(random.uniform(0.2, 1.0))
+        action.click()
+        action.perform()
+
+    def human_scroll(self, element=None):
+        """Simulates human scrolling with variable speed and pauses"""
+        if element:
+            # Scroll to element with jitter
+            self.driver.execute_script(
+                f"window.scrollBy(0, {random.randint(-50, 50)});"  # Initial jitter
+            )
+            time.sleep(random.uniform(0.1, 0.3))
+            self.driver.execute_script(
+                "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                element
+            )
+        else:
+            # Random scroll with momentum effect
+            scroll_px = random.randint(200, 800)
+            for chunk in range(3, 0, -1):
+                partial_scroll = scroll_px // chunk
+                self.driver.execute_script(
+                    f"window.scrollBy(0, {partial_scroll});"
+                )
+                time.sleep(random.uniform(0.1, 0.5))  # Decreasing pauses
         
+        # Post-scroll micro-movements
+        for _ in range(random.randint(1, 2)):
+            self.driver.execute_script(
+                f"window.scrollBy(0, {random.randint(-15, 15)});"
+            )
+            time.sleep(random.uniform(0.05, 0.15))
         
+        # Final reading pause
+        time.sleep(random.uniform(0.5, 2.0)) 
+    
+    def human_read_with_scroll(self, element):
+        # Scroll element into view naturally
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+            element
+        )
+        time.sleep(random.uniform(0.8, 1.5))
+        
+        # Read with human-like delays
+        return self.human_read(element, min_delay=0.2, max_delay=0.7)
+
+    def human_read(
+        element_or_html: Union['WebElement', str],
+        tag: str = None,
+        class_: str = None,
+        min_delay: float = 0.1,
+        max_delay: float = 0.5,
+        line_delay: bool = True,
+        jitter: bool = True
+    ) -> Union[str, List[str]]:
+        """
+        Simulates human-like text reading behavior using BeautifulSoup.
+        
+        Args:
+            element_or_html: Selenium WebElement or raw HTML string
+            tag: Specific HTML tag to focus on (e.g., 'div', 'span')
+            class_: CSS class to filter by
+            min_delay: Minimum delay between chunks (seconds)
+            max_delay: Maximum delay between chunks
+            line_delay: Whether to add extra delay for line breaks
+            jitter: Randomize delay times within range
+            
+        Returns:
+            Extracted text as string or list of paragraphs
+        """
+        # Convert input to HTML string
+        if hasattr(element_or_html, 'get_attribute'):
+            html = element_or_html.get_attribute('outerHTML')
+        else:
+            html = str(element_or_html)
+        
+        # Parse with BeautifulSoup
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # Targeted extraction
+        if tag or class_:
+            css_selector = tag or ''
+            if class_:
+                css_selector += f'.{class_.replace(" ", ".")}'
+            elements = soup.select(css_selector)
+            if not elements:
+                return ""
+            soup = elements[0]
+        
+        # Remove unwanted elements
+        for unwanted in soup(['script', 'style', 'noscript', 'svg']):
+            unwanted.decompose()
+        
+        # Get clean text with natural line breaks
+        text = soup.get_text(separator='\n', strip=True)
+        
+        # Simulate reading behavior
+        lines = [line for line in text.split('\n') if line.strip()]
+        result = []
+        
+        for line in lines:
+            # Add word-by-word delay
+            words = line.split()
+            for i, word in enumerate(words):
+                # Skip delays for very short words
+                if len(word) > 3:
+                    delay = random.uniform(min_delay, max_delay) if jitter else (min_delay + max_delay)/2
+                    time.sleep(delay * (0.5 if i % 3 == 0 else 1))  # Varied rhythm
+                
+                result.append(word + (' ' if i < len(words)-1 else ''))
+            
+            if line_delay:
+                time.sleep(random.uniform(min_delay*1.5, max_delay*2))
+        
+        # Return as single string or list of paragraphs
+        return ' '.join(result) if len(lines) < 3 else lines
     
     def _read_xpath_string(self,criterion):
         webElement = criterion.webElement
         print(webElement.text)
             
     
-       
-            
-
-    # def _print_string(self,criterion):
-    #     path = criterion.xpath
-    #     div_element = WebDriverWait(self.driver, 10).until(
-    #     EC.presence_of_element_located((By.XPATH, path ))
-    #     )
-    #         # Find the list inside the div
-    #     list_element = div_element.find_element(By.TAG_NAME, "ul")
-            
-    #         # Find all list items
-    #     list_items = list_element.find_elements(By.TAG_NAME, "li")
-            
-    #         # Get the last list item
-    #     last_item = list_items[-1]
-            
-    #         # Get the text of the last list item
-
-    #     self.driver.execute_script("arguments[0].scrollIntoView(true);", div_element)
-    #     last_item_text = last_item.text
-            
-    #     print(f"The text of the last item is: {last_item_text}")
-
-
 
     def parse_string(input_str):
         # Updated regular expression to allow for optional number
@@ -391,7 +601,7 @@ class InteractionService:
             return None  # Return None if no match is found
             
             
-        
+    
 
 
 
