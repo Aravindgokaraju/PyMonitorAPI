@@ -1,0 +1,19 @@
+FROM python:3.9-slim as builder
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --user -r requirements.txt
+
+FROM python:3.9-slim
+WORKDIR /app
+
+# Copy only what's needed from builder
+COPY --from=builder /root/.local /root/.local
+COPY . .
+
+# Ensure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings
+
+CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]

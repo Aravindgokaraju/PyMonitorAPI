@@ -6,26 +6,26 @@ from selenium.webdriver.remote.webelement import WebElement
 from execution.interaction_service import InteractionService
 
 
-class Website:
+# class Website:
 
 
-    def __repr__(self):
-        print(self.criteria)
-        return (f"ExampleClass(url='{self.url}', criteria={self.criteria})")
+#     def __repr__(self):
+#         print(self.criteria)
+#         return (f"ExampleClass(url='{self.url}', criteria={self.criteria})")
     
-    def __init__(self,siteName:str, rawCriteria:str):
-        #RawCriteria is a string depicting an array of arrays with each subarray being the name of a DOM element followed by actions to take on it
-        print("\nCriteria:  "+ rawCriteria+"\n")
-        rawListCriteria = json.loads(rawCriteria)
-        elementCommandList:list = []
-        for criterion in rawListCriteria:
-            array = re.findall(r"'([^']*)'", criterion)
-            parsedCriterion:Criteria = Criteria(array)
+#     def __init__(self,siteName:str, rawCriteria:str):
+#         #RawCriteria is a string depicting an array of arrays with each subarray being the name of a DOM element followed by actions to take on it
+#         print("\nCriteria:  "+ rawCriteria+"\n")
+#         rawListCriteria = json.loads(rawCriteria)
+#         elementCommandList:list = []
+#         for criterion in rawListCriteria:
+#             array = re.findall(r"'([^']*)'", criterion)
+#             parsedCriterion:Criteria = Criteria(array)
 
-            elementCommandList.append(parsedCriterion)   
+#             elementCommandList.append(parsedCriterion)   
         
-        self.criteriaList = elementCommandList
-        self.url = siteName
+#         self.criteriaList = elementCommandList
+#         self.url = siteName
 
 
 

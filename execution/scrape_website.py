@@ -1,17 +1,20 @@
 from datetime import datetime
+from decimal import Decimal
 import json
 import os
 import re
 
+import sys
 import time
 import traceback
 from typing import Any, Dict, List, Tuple, Optional
-
+from django.db import transaction
 from execution.interruption_handler import InterruptionHandler
+from execution.models import SKU, PriceData
 
 # from execution.mongo_service import MongoService
 from .interaction_service import InteractionService
-from .scraping_models import Criteria, Website
+from .scraping_models import Criteria
 from .commandstack import CommandStack
 
 # from execution.scrape import ScrapingService
@@ -28,52 +31,83 @@ class ScrapingService:
         self.criteria_dict: Dict[str, Criteria] = {} #TODO: legacy variable, delete later
         self.parent_pair: Dict[str,str] = {}
         self.start_index = 0
-        self.cachedWebsites=""
+        self.website = ""
         
         # Initialize function map
 
 
-    def scrape_websites(self) -> List[Tuple[str, str, str]]:
+    def scrape_websites(self,request_data) -> List[Tuple[str, str, str]]:
         """Main method to execute the scraping process"""
         try:
-            # Get data from Google Sheets
-            skus = self._get_sku_data()
-            websites = self._get_websites_data()
+            skus = self._get_sku_data(request_data)
+            flows = self._get_flow_data(request_data)
             
             table_data = []
             
-            for website in websites:
-                self._process_website(website, skus, table_data)
-            
+            for flow in flows:
+                self.criteria_dict = self.steps_to_criteria_dict(flow["steps"])
+                self._process_website(flow, skus, table_data)
+
+            self._save_to_database(table_data)
             return table_data
             
 
         except Exception as e:
-            traceback.print_exc()
-            raise Exception(f"Scraping failed: {e}")
+            # Get line number where error occurred
+            _, _, exc_traceback = sys.exc_info()
+            line_number = exc_traceback.tb_lineno
+            
+            # Format error message
+            error_msg = f"Scraping failed at line {line_number}: {str(e)}"
+            
+            traceback.print_exc()  # Print full traceback to console/log
+            raise ValueError(f"Failed to get SKUs: {str(e)}") from e
+
         finally:
             self.interaction_service.quit()
 
-    def _get_sku_data(self) -> List[Dict[str, Any]]:
+    def _get_sku_data(self,request_data:Dict[str, Any]) -> List[Dict[str, Any]]:
         """Get SKU data - temporarily using test data"""
-        return [
-            {"sku_id": "HF9117-400", "name": "Test Product 1", "id": "1"},
-            {"sku_id": "DD8959-100", "name": "Test Product 2", "id": "2"}
-        ]
+        
+        skus = request_data.get('skus',[])
+  
+
+        if not isinstance(skus, list):
+            raise ValueError("'skus' must be an array")
+        
+        return skus
         
         # Original implementation:
         # skus = SKU.objects.all().values_list('sku_number', 'name', 'id')
         # return [list(sku) for sku in skus]
 
-    def _get_websites_data(self) -> List[Dict[str, Any]]:
-        """Get website data - temporarily using test data"""
-        # TODO: Replace this with actual MongoDB call when ready
-        return self._get_test_website_data()
+    def _get_flow_data(self, request_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Get SKUs data from the incoming request
         
-        # Original implementation:
-        # website_data = self.mongo_service._get_websites_data()
-        # return website_data
-    
+        Args:
+            request_data: The JSON data received in the request
+            
+        Returns:
+            List of SKU dictionaries extracted from the request
+        """
+        # Extract the skus array from the request data
+        flows = request_data.get('flows', [])
+        # Validate that skus is a list (optional but recommended)
+        if not isinstance(flows, list):
+            raise ValueError("'flows' must be an array")
+        
+        return flows
+    # def _get_websites_data(self) -> List[Dict[str, Any]]:
+    #     """Get website data - temporarily using test data"""
+
+
+    #     # TODO: Replace this with actual MongoDB call when ready
+    #     return self._get_test_website_data()
+        
+    #     # Original implementation:
+    #     # website_data = self.mongo_service._get_websites_data()
+    #     # return website_data
+  
     # def _get_test_website_data(self) -> List[Dict[str, Any]]:
     #     """Read test website data from JSON file in the same directory"""
     #     # Get the directory of the current script
@@ -87,12 +121,21 @@ class ScrapingService:
     #         # Convert the steps into criteria dictionary format
     #         self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
             
+    #         # Ensure interruptions exists and is a list
+    #         interruptions = test_data.get("interruptions", [])
+    #         if not isinstance(interruptions, list):
+    #             print(f"Warning: interruptions should be a list, got {type(interruptions)}. Converting to empty list.")
+    #             interruptions = []
+            
+    #         print(f"Loaded {len(interruptions)} interruptions from test data")
+                
     #         # Return the test data in the expected format
     #         return [{
     #             "id": test_data["_id"],
     #             "name": test_data["name"],
     #             "steps": test_data["steps"],
     #             "url": test_data["url"],
+    #             "interruptions": interruptions,  # Explicitly include interruptions
     #             "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
     #         }]
     #     except FileNotFoundError:
@@ -100,53 +143,17 @@ class ScrapingService:
     #     except json.JSONDecodeError:
     #         raise Exception(f"Invalid JSON format in test data file: {test_file}")
     #     except KeyError as e:
-    #         raise Exception(f"Missing required field in test data: {e}")
-    def _get_test_website_data(self) -> List[Dict[str, Any]]:
-        """Read test website data from JSON file in the same directory"""
-        # Get the directory of the current script
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        test_file = os.path.join(current_dir, 'test_data')
-        
-        try:
-            with open(test_file, 'r', encoding='utf-8') as f:
-                test_data = json.load(f)
-                
-            # Convert the steps into criteria dictionary format
-            self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
-            
-            # Ensure interruptions exists and is a list
-            interruptions = test_data.get("interruptions", [])
-            if not isinstance(interruptions, list):
-                print(f"Warning: interruptions should be a list, got {type(interruptions)}. Converting to empty list.")
-                interruptions = []
-            
-            print(f"Loaded {len(interruptions)} interruptions from test data")
-                
-            # Return the test data in the expected format
-            return [{
-                "id": test_data["_id"],
-                "name": test_data["name"],
-                "steps": test_data["steps"],
-                "url": test_data["url"],
-                "interruptions": interruptions,  # Explicitly include interruptions
-                "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
-            }]
-        except FileNotFoundError:
-            raise Exception(f"Test data file not found at: {test_file}")
-        except json.JSONDecodeError:
-            raise Exception(f"Invalid JSON format in test data file: {test_file}")
-        except KeyError as e:
-            if str(e) == "'steps'":
-                raise Exception(f"Missing required 'steps' field in test data")
-            print(f"Warning: Missing optional field {e} in test data. Using defaults.")
-            return [{
-                "id": test_data.get("_id", ""),
-                "name": test_data.get("name", ""),
-                "steps": [],
-                "url": test_data.get("url", ""),
-                "interruptions": test_data.get("interruptions", []),
-                "criteriaList": []
-            }]
+    #         if str(e) == "'steps'":
+    #             raise Exception(f"Missing required 'steps' field in test data")
+    #         print(f"Warning: Missing optional field {e} in test data. Using defaults.")
+    #         return [{
+    #             "id": test_data.get("_id", ""),
+    #             "name": test_data.get("name", ""),
+    #             "steps": [],
+    #             "url": test_data.get("url", ""),
+    #             "interruptions": test_data.get("interruptions", []),
+    #             "criteriaList": []
+    #         }]
 
     def _process_website(self, website_data:Dict[str, Any], skus: List[List[str]], table_data: List):
         """Process a single website with all SKUs"""
@@ -154,14 +161,17 @@ class ScrapingService:
         # self.criteria_dict = self._criteria_to_dict(website.criteriaList) set this directly to the db object in sample_data
         self.start_index = 0
         self.interruption_handler.load_interruptions(website_data["interruptions"])
-        self.interaction_service._open_website(website_data["id"])
+        self.interaction_service._open_website(website_data["url"])
+        self.website = website_data["url"]
         
         for full_sku in skus:
             if not full_sku:
                 continue
                 
-            sku = full_sku["sku_id"]
-            try:
+            sku = full_sku["sku_number"]
+            print("SKU check: ",sku)
+            print("Website check", website_data)
+            try:      
                 self._process_sku(website_data, sku, table_data)
             except:
                 print("Skipping sku, error occured")
@@ -172,9 +182,13 @@ class ScrapingService:
         
         # Initialize with the starting step
         initial_step = next(
-            step for step in website_data["steps"] 
+            step for step in website_data["steps"]
             if step.get("start_trigger", False)
         )
+        print("Step check: ",initial_step)
+        print("Initial step xpath check",initial_step["xpath"])
+        print("Initial criteria check",self.criteria_dict[initial_step["xpath"]].copyWith())
+
         initial_criteria = self.criteria_dict[initial_step["xpath"]].copyWith()
         print("Pushing command: processing")
         self.command_stack.push(initial_criteria)
@@ -271,22 +285,25 @@ class ScrapingService:
                 self.interruption_handler.handle("before_step", criterion)
 
                 print(f"Attempt {attempt + 1} of {max_retries + 1}")
-                command = self._parse_action(action)
                 
+                command = self._parse_action(action)
+
                 if action == "enter_string":
                     command(criterion, sku),
 
 
                 elif action == "add_to_table":
-                    price =command(criterion),
+                    price = command(criterion)
+                    print("TABLE SKU: ",sku)
                     table_data.append({
-                        'url': self.interaction_service.driver.current_url,
+                        'website': self.website,
                         'sku': sku,
                         'price': price,
-                        'timestamp': datetime.now().isoformat()
                     })
                     print("TABLE DATA",table_data)
 
+                elif action == "clear_stack":
+                    break
                 else:
                     command(criterion),
                 
@@ -447,6 +464,7 @@ class ScrapingService:
         elif action == "remove_self":
             return self.remove_self
         elif action == "clear_stack":
+            print("Trynna clear shii")
             return self.command_stack.clear()  # Add this line
         else:
             return lambda *args, **kwargs: print("Unrecognized command; no action taken.")
@@ -484,6 +502,40 @@ class ScrapingService:
     #             if attempt == attempts - 1:
     #                 raise
     #             self._apply_retry_delay(attempt, strategy)
+    
+    def _save_to_database(self, table_data):
+        """
+        Save scraped price data to the Django database.
+        Creates SKU if not exists, and updates PriceData.
+        """
+        with transaction.atomic():
+            for entry in table_data:
+                sku_code = entry['sku']
+                website_name = entry['website']  # Or extract from URL if needed
+                price_value = entry['price']
+
+                # Convert price to Decimal if it's not already
+                if not isinstance(price_value, Decimal):
+                    try:
+                        price_value = Decimal(str(price_value)).quantize(Decimal('0.00'))
+                    except Exception as e:
+                        print(f"Invalid price format for {sku_code}: {e}")
+                        continue
+
+                # Get or create SKU
+                sku_obj, created = SKU.objects.get_or_create(
+                    sku_number=sku_code,
+                    defaults={'name': f"Product {sku_code}"}  # Adjust defaults as needed
+                )
+
+                # Update or create PriceData
+                PriceData.objects.update_or_create(
+                    sku=sku_obj,
+                    website=website_name,
+                    defaults={'price': price_value}
+                )
+        
+        print(f"Saved {len(table_data)} records to the database.")
     @staticmethod
     def _db_to_criteria_dict(criteria_list: List[Criteria]) -> Dict[str, Criteria]:
         return {criteria.xpath: criteria for criteria in criteria_list}

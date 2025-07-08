@@ -1,6 +1,5 @@
 {
-  "_id": "https://www.nike.com/",
-  "name": "TEST SET OF DATA DICT THINGY",
+  "name": "Nike",
   "url": "https://www.nike.com/", 
 
   "steps": [
@@ -31,7 +30,7 @@
     },
     {
       "xpath": "//span[contains(@class, 'nds-text mr2-sm css-tbgmka e1yhcai00 text-align-start appearance-body1Strong color-primary display-inline weight-regular')]",
-      "actions": ["scroll_view","print_text","add_next"],
+      "actions": ["scroll_view","add_to_table","add_next"],
       "next": {
         "xpath": "//a[contains(@class, 'swoosh-link')]",
         "actions": []

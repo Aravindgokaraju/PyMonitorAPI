@@ -1,0 +1,31 @@
+{
+  "name": "TEST SET OF DATA DICT THINGY",
+  "url": "https://stockx.com/", 
+
+  "steps": [
+    {
+      "xpath": "//input[contains(@class, 'chakra-input css-1u1ub5i')]",
+      "actions": ["scroll_view","strong_click","enter_string","add_next"],
+      "next": {
+        "xpath": "//a[@data-testid='productTile-ProductSwitcherLink']",
+        "actions": []
+      },
+      "start_trigger": true
+    },
+    {
+      "xpath": "//a[@data-testid='productTile-ProductSwitcherLink']",
+      "actions": ["scroll_view", "sleep","strong_click","add_next"],
+      "next": {
+        "xpath": "//h2[contains(@class, 'chakra-heading css-vacpx7')]",
+        "actions": []
+      }
+    },
+    {
+      "xpath": "//h2[contains(@class, 'chakra-heading css-vacpx7')]",
+      "actions": ["scroll_view","print_text","clear_stack"]
+    }
+  ],
+    "interruptions": [
+    ]
+}
+

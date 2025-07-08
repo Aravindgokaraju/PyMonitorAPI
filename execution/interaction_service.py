@@ -39,12 +39,8 @@ class InteractionService:
             self.config = StableConfig()
             
         # Apply configurations
-        chrome_options = self.config.apply()
         if isinstance(self.config, StableConfig):
-            self.driver = webdriver.Chrome(
-                service=Service(ChromeDriverManager().install()), 
-                options=chrome_options
-            )
+            self.driver = self.config.create_driver()
         else:
             self.driver = uc.Chrome(
             options=self.chrome_options,
@@ -176,8 +172,8 @@ class InteractionService:
                 'enter_string': self._enter_string,
                 'test_command': self._test,
                 'scroll_view': self._scroll_into_view,
-                'fast_find': self._find_element,
-                'fast_find_multiple': self._find_elements,
+                # 'fast_find': self._find_element,
+                # 'fast_find_multiple': self._find_elements,
                 'wait_find': self._wait_for_element_presence,
                 'wait_click': self._wait_for_element_clickable,
                 # 'wait_find_self': self._wait_find_self,
