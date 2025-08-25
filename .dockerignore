@@ -1,3 +1,4 @@
+# Your existing patterns
 .git
 *.pyc
 __pycache__
@@ -6,3 +7,66 @@ env/
 *.env
 myenv/
 *.myenv
+
+# --- ADD THESE ---
+
+# Docker and CI files
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
+.gitlab-ci.yml
+.github/
+.gitignore
+
+# Python specific
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.egg
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Development files and logs
+nosetests.xml
+coverage.xml
+*.log
+local.sqlite3
+db.sqlite3
+
+# Environment and IDE files
+.venv/
+venv/
+venv*/
+env*/
+.env.production
+.env.local
+.env.dev
+.env.test
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Static files (if collected elsewhere)
+staticfiles/
+media/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database files (if any)
+*.db
+*.dump
+*.backup

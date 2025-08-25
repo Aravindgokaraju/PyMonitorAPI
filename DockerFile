@@ -1,19 +1,131 @@
-FROM python:3.9-slim as builder
+# Stage 1: Builder - Install all dependencies
+FROM python:3.10-slim as builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    pkg-config \
+    default-libmysqlclient-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --user -r requirements.txt
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-FROM python:3.9-slim
+# Stage 2: Runtime - Lean production image
+FROM python:3.10-slim
 WORKDIR /app
 
-# Copy only what's needed from builder
-COPY --from=builder /root/.local /root/.local
-COPY . .
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        default-libmysqlclient-dev \
+        libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 \
+        libxi6 libxtst6 libgtk-3-0 libgbm1 libxss1 libasound2 \
+        fonts-liberation \
+        wget \
+        unzip \
+        xvfb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Ensure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Install Google Chrome ONLY (no ChromeDriver - webdriver-manager will handle it)
+RUN wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends /tmp/chrome.deb && \
+    rm /tmp/chrome.deb
+
+# Create a non-root user
+RUN adduser --disabled-password --gecos "" myuser
+USER myuser
+
+# Copy installed packages from builder
+COPY --from=builder --chown=myuser:myuser /root/.local /home/myuser/.local
+
+# Copy application code
+COPY --chown=myuser:myuser . .
+
+# Environment setup
+ENV PATH=/home/myuser/.local/bin:/usr/local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings
+ENV DJANGO_ENV=production
+ENV DISPLAY=:99
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
 
-CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Production command with Xvfb for headless browser
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x16 & export DISPLAY=:99 && python manage.py wait_for_db && python manage.py migrate && python manage.py collectstatic --noinput && waitress-serve --host=0.0.0.0 --port=8000 PyMonitor.wsgi:application"]
+
+# # Stage 1: Builder - Install all dependencies
+# FROM python:3.10-slim as builder
+
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#     pkg-config \
+#     default-libmysqlclient-dev \
+#     gcc \
+#     && rm -rf /var/lib/apt/lists/*
+
+# WORKDIR /app
+# COPY requirements.txt .
+# RUN pip install --user --no-cache-dir -r requirements.txt
+
+# # Stage 2: Runtime - Lean production image
+# FROM python:3.10-slim
+# WORKDIR /app
+
+# # Install runtime system dependencies
+# RUN apt-get update && \
+#     apt-get install -y --no-install-recommends \
+#     curl \
+#     default-libmysqlclient-dev \
+#     libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 \
+#     libxi6 libxtst6 libgtk-3-0 libgbm1 libxss1 libasound2 \
+#     fonts-liberation \
+#     wget \
+#     unzip \
+#     && wget -q -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+#     && apt-get install -y --no-install-recommends /tmp/chrome.deb \
+#     && rm /tmp/chrome.deb \
+#     && apt-get clean \
+#     && rm -rf /var/lib/apt/lists/*
+
+
+# # Install ChromeDriver directly (MORE RELIABLE METHOD)
+# RUN CHROME_DRIVER_VERSION=$(wget -q -O - https://chromedriver.storage.googleapis.com/LATEST_RELEASE) \
+#     && wget -q -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROME_DRIVER_VERSION}/chromedriver_linux64.zip \
+#     && unzip -o /tmp/chromedriver.zip -d /tmp/ \
+#     && chmod +x /tmp/chromedriver \
+#     && mv /tmp/chromedriver /usr/bin/chromedriver \
+#     && rm /tmp/chromedriver.zip
+
+# # Create a non-root user
+# RUN adduser --disabled-password --gecos "" myuser
+# USER myuser
+
+# # Copy installed packages from builder
+# COPY --from=builder --chown=myuser:myuser /root/.local /home/myuser/.local
+
+# # Copy application code
+# COPY --chown=myuser:myuser . .
+
+
+# # Environment setup
+# ENV PATH=/home/myuser/.local/bin:/usr/bin:$PATH
+# ENV PYTHONUNBUFFERED=1
+# # ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings
+# ENV DJANGO_ENV=production
+# ENV DISPLAY=:99
+# ENV CHROME_BIN=/usr/bin/google-chrome-stable
+# ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+
+# # Health check
+# HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+#     CMD curl -f http://localhost:8000/health/ || exit 1
+
+# # Production command
+# CMD ["sh", "-c", "python manage.py wait_for_db && python manage.py migrate && python manage.py collectstatic --noinput && waitress-serve --host=0.0.0.0 --port=8000 PyMonitor.wsgi:application"]

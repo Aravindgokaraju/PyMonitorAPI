@@ -43,8 +43,9 @@ class ScrapingService:
             flows = self._get_flow_data(request_data)
             
             table_data = []
-            
+            print("Aint even printing shii")
             for flow in flows:
+                print("Printing flow",flow)
                 self.criteria_dict = self.steps_to_criteria_dict(flow["steps"])
                 self._process_website(flow, skus, table_data)
 
@@ -97,63 +98,7 @@ class ScrapingService:
             raise ValueError("'flows' must be an array")
         
         return flows
-    # def _get_websites_data(self) -> List[Dict[str, Any]]:
-    #     """Get website data - temporarily using test data"""
-
-
-    #     # TODO: Replace this with actual MongoDB call when ready
-    #     return self._get_test_website_data()
-        
-    #     # Original implementation:
-    #     # website_data = self.mongo_service._get_websites_data()
-    #     # return website_data
   
-    # def _get_test_website_data(self) -> List[Dict[str, Any]]:
-    #     """Read test website data from JSON file in the same directory"""
-    #     # Get the directory of the current script
-    #     current_dir = os.path.dirname(os.path.abspath(__file__))
-    #     test_file = os.path.join(current_dir, 'test_data')
-        
-    #     try:
-    #         with open(test_file, 'r', encoding='utf-8') as f:
-    #             test_data = json.load(f)
-                
-    #         # Convert the steps into criteria dictionary format
-    #         self.criteria_dict = self.steps_to_criteria_dict(test_data["steps"])
-            
-    #         # Ensure interruptions exists and is a list
-    #         interruptions = test_data.get("interruptions", [])
-    #         if not isinstance(interruptions, list):
-    #             print(f"Warning: interruptions should be a list, got {type(interruptions)}. Converting to empty list.")
-    #             interruptions = []
-            
-    #         print(f"Loaded {len(interruptions)} interruptions from test data")
-                
-    #         # Return the test data in the expected format
-    #         return [{
-    #             "id": test_data["_id"],
-    #             "name": test_data["name"],
-    #             "steps": test_data["steps"],
-    #             "url": test_data["url"],
-    #             "interruptions": interruptions,  # Explicitly include interruptions
-    #             "criteriaList": list(self.criteria_dict.values())  # For legacy compatibility
-    #         }]
-    #     except FileNotFoundError:
-    #         raise Exception(f"Test data file not found at: {test_file}")
-    #     except json.JSONDecodeError:
-    #         raise Exception(f"Invalid JSON format in test data file: {test_file}")
-    #     except KeyError as e:
-    #         if str(e) == "'steps'":
-    #             raise Exception(f"Missing required 'steps' field in test data")
-    #         print(f"Warning: Missing optional field {e} in test data. Using defaults.")
-    #         return [{
-    #             "id": test_data.get("_id", ""),
-    #             "name": test_data.get("name", ""),
-    #             "steps": [],
-    #             "url": test_data.get("url", ""),
-    #             "interruptions": test_data.get("interruptions", []),
-    #             "criteriaList": []
-    #         }]
 
     def _process_website(self, website_data:Dict[str, Any], skus: List[List[str]], table_data: List):
         """Process a single website with all SKUs"""
@@ -186,10 +131,10 @@ class ScrapingService:
             if step.get("start_trigger", False)
         )
         print("Step check: ",initial_step)
-        print("Initial step xpath check",initial_step["xpath"])
-        print("Initial criteria check",self.criteria_dict[initial_step["xpath"]].copyWith())
+        print("criteria dihh check",self.criteria_dict[initial_step["xpath"]])
+        print("Initial criteria check",self.criteria_dict[initial_step["xpath"]].copyOf())
 
-        initial_criteria = self.criteria_dict[initial_step["xpath"]].copyWith()
+        initial_criteria = self.criteria_dict[initial_step["xpath"]].copyOf()
         print("Pushing command: processing")
         self.command_stack.push(initial_criteria)
         print("Size of stack: ",self.command_stack.size())
@@ -204,7 +149,7 @@ class ScrapingService:
                 print(f"Action progress: {criterion.actionCount}/{len(criterion.actions)}")
                 
                 # Find the web element
-                web_element = self.interaction_service.smart_find(self.criteria_dict, criterion.xpath)
+                web_element = self.interaction_service.smart_find(self.criteria_dict, criterion.xpath, criterion.parent)
                 if not web_element:
                     print(f"Element not found: {criterion.xpath}")
                     self.command_stack.pop()
@@ -249,31 +194,6 @@ class ScrapingService:
             traceback.print_exc()
             self.command_stack.clear()
 
-    # def _execute_action(self, criterion, action, sku, table_data):
-    #     print(f"Executing action: {action} on criteria: {criterion.xpath}")
-    #     print(f"Criteria details: {criterion}")
-    #     print(f"Current action count: {criterion.actionCount}/{len(criterion.actions)}")
-        
-    #     try:
-    #         command = self._parse_action(action)
-    #         if action == "enter_string":
-    #             command(criterion, sku)
-    #         elif action == "add_to_table":
-    #             # Example of data collection
-    #             price = command(criterion)  # Assuming command returns the price
-    #             print(price)
-    #             table_data.append({
-    #                 'url': self.interaction_service.driver.current_url,
-    #                 'sku': sku,
-    #                 'price': price,
-    #                 'element_text': criterion.webElement.text,
-    #                 'timestamp': datetime.now().isoformat()
-    #             })
-    #         else:
-    #             command(criterion)
-    #     except Exception as e:
-    #         print(f"Error executing action {action}: {str(e)}")
-    #         raise
 
     def _execute_action(self, criterion, action, sku, table_data):
         print(f"Executing action: {action} on criteria: {criterion.xpath}")
@@ -368,6 +288,7 @@ class ScrapingService:
             element = self.interaction_service.smart_find(
                 self.criteria_dict,
                 criterion.xpath,
+                criterion.parent,
                 #TODO: get this done must make find find the right child: xpath_id=getattr(criterion, 'xpath_id', 0)  # Handle indexed elements
             )
         except Exception as e:
@@ -387,6 +308,8 @@ class ScrapingService:
     def _handle_add_next_action(self, criterion: Criteria):
         """Handle the add_next action with proper drill-and-return behavior"""
         # Initialize child count if first time
+        if not criterion.child:
+            raise ValueError(f"No child XPath defined for {criterion.xpath}")
         if criterion.childCount == -1:
             elements = self.interaction_service.smart_find_elements(criterion.child)
             criterion.childCount = len(elements) if elements else 0
@@ -443,7 +366,7 @@ class ScrapingService:
             print(f"Executing transition action: {action_label}")
             if action_label == "smart_find":
                 # Special handling for smart_find since it needs the locator
-                self.interaction_service.smart_find(self.criteria_dict, criterion.child)
+                self.interaction_service.smart_find(self.criteria_dict, criterion.child,criterion.xpath)
             else:
                 next_command = self._parse_action(action_label)
                 next_command(criterion)
@@ -536,31 +459,85 @@ class ScrapingService:
                 )
         
         print(f"Saved {len(table_data)} records to the database.")
-    @staticmethod
-    def _db_to_criteria_dict(criteria_list: List[Criteria]) -> Dict[str, Criteria]:
-        return {criteria.xpath: criteria for criteria in criteria_list}
+    # @staticmethod
+    # def _db_to_criteria_dict(criteria_list: List[Criteria]) -> Dict[str, Criteria]:
+    #     return {criteria.xpath: criteria for criteria in criteria_list}
+
+    # @staticmethod
+    # def steps_to_criteria_dict(steps: List[dict]) -> Dict[str, 'Criteria']:
+    #     criteria_dict = {}
+        
+    #     # First pass: Create all Criteria objects
+    #     for step in steps:
+    #         criteria = Criteria(step)  # Now accepts the full step dict
+    #         criteria_dict[step['xpath']] = criteria
+        
+    #     # Second pass: Link parents/children
+    #     for step in steps:
+    #         if 'next' in step:
+    #             parent = criteria_dict[step['xpath']]
+    #             child_xpath = step['next']['xpath']
+                
+    #             if child_xpath in criteria_dict:
+    #                 parent.child = child_xpath
+    #                 criteria_dict[child_xpath].parent = parent.xpath
+        
+    #     return criteria_dict
 
     @staticmethod
     def steps_to_criteria_dict(steps: List[dict]) -> Dict[str, 'Criteria']:
         criteria_dict = {}
+        relationship_map = {}  # child_xpath: parent_xpath
         
-        # First pass: Create all Criteria objects
+        # Single pass creation with relationship tracking
         for step in steps:
-            criteria = Criteria(step)  # Now accepts the full step dict
+            criteria = Criteria(step)
             criteria_dict[step['xpath']] = criteria
-        
-        # Second pass: Link parents/children
-        for step in steps:
+            
             if 'next' in step:
-                parent = criteria_dict[step['xpath']]
                 child_xpath = step['next']['xpath']
-                
-                if child_xpath in criteria_dict:
-                    parent.child = child_xpath
-                    criteria_dict[child_xpath].parent = parent.xpath
+                relationship_map[child_xpath] = step['xpath']
         
+        # Assign parents
+        for child_xpath, parent_xpath in relationship_map.items():
+            if child_xpath in criteria_dict:
+                criteria_dict[child_xpath].parent = parent_xpath
+            else:
+                print(f"Warning: Child xpath {child_xpath} not found in steps")
+        print("CRITERIA DICT",criteria_dict)
         return criteria_dict
-
+    
+    # @staticmethod
+    # def steps_to_criteria_dict(steps: List[dict]) -> Dict[str, Criteria]:
+    #     """
+    #     Converts flow steps into a linked Criteria dictionary.
+        
+    #     Args:
+    #         steps: List of step dictionaries from the flow definition
+            
+    #     Returns:
+    #         Dictionary of {xpath: Criteria} with properly linked parent/child relationships
+    #     """
+    #     criteria_dict = {}
+        
+    #     # First pass: Create all Criteria objects
+    #     for step in steps:
+    #         criteria = Criteria(step)
+    #         # Set child if next step exists
+    #         criteria.child = step.get('next', {}).get('xpath', "")
+    #         print("Criteria Xpath",step['xpath'], criteria.xpath)
+    #         print("Criteria Child",criteria.child)
+    #         criteria_dict[step['xpath']] = criteria
+        
+    #     # Second pass: Establish parent references
+    #     for criteria in criteria_dict.values():
+    #         if criteria.child and criteria.child in criteria_dict:
+    #             criteria_dict[criteria.child].parent = criteria.xpath
+    #         elif criteria.child:
+    #             print(f"Warning: Child xpath '{criteria.child}' not found in steps")
+    #     print("returning criteria dict",criteria_dict)
+    #     return criteria_dict
+    
     @staticmethod
     def _get_function_arguments(action: str) -> List[str]:
         match = re.match(r'\w+\((.*)\)', action)

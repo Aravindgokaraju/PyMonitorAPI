@@ -58,109 +58,6 @@ class InteractionService:
     
 
 
-  
-    # def __init__(self):
-
-    #     user_agents = [
-    #         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...",
-    #         "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)..."
-    #     ]
-    #     proxies = ["12.34.56.78:8080", "23.45.67.89:3128"]
-    
-    #     # Set up Chrome options
-    #     chrome_options = Options()
-    #     chrome_options.add_argument("--ignore-certificate-errors")
-    #     chrome_options.add_argument("--disable-dev-shm-usage")
-    #     #chrome_options.add_argument("--headless")
-    #     chrome_options.add_argument('--disable-extensions')  # Disable extensions
-    #     chrome_options.add_argument('--disable-infobars')  # Disable popups like "Chrome is being controlled by automated software"
-    #     chrome_options.add_argument("--allow-insecure-localhost")
-    #     chrome_options.add_argument("--disable-web-security")
-    #     chrome_options.add_argument("--no-sandbox")
-    #     chrome_options.add_argument("--disable-3d-apis")
-    #     chrome_options.add_argument("--disable-webgl")
-    #     chrome_options.add_argument("--disable-features=WebRtcHideLocalIpsWithMdns")
-    #     # Initialize ChromeDriver using ChromeDriverManager
-    #     self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
-    #     # Initialize ActionChains for performing complex actions
-    #     self.action = ActionChains(self.driver)
-
-    #     # Standard stealth options
-    #     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    #     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    #     chrome_options.add_experimental_option("useAutomationExtension", False)
-        
-    #     # Disable automation flags
-    #     chrome_options.add_argument('--disable-infobars')
-    #     chrome_options.add_argument('--disable-notifications')
-    #     chrome_options.add_argument('--disable-popup-blocking')
-        
-
-    #     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    #     chrome_options.add_argument("--disable-renderer-backgrounding")
-    #     chrome_options.add_argument("--disable-background-timer-throttling")
-    #     # Randomize window size
-    #     chrome_options.add_argument(f"--window-size={random.randint(1000,1400)},{random.randint(800,1000)}")
-
-    #     # Load real Chrome profile (optional)
-  
-   
-    #     chrome_options.add_argument(f'--proxy-server={random.choice(proxies)}')
-    #     chrome_options.add_argument(f"user-agent={random.choice(user_agents)}")
-
-    #     chrome_options.add_argument("--use-gl=desktop")  # Force hardware acceleration
-    #     chrome_options.add_argument("--ignore-gpu-blocklist")
-
-    #     # Canvas noise injection script
-    #     canvas_script = """
-    #     const canvas = document.createElement('canvas');
-    #     const ctx = canvas.getContext('2d');
-    #     ctx.textBaseline = 'top';
-    #     ctx.font = '14px Arial';
-    #     ctx.fillStyle = '#f60';
-    #     ctx.fillRect(0, 0, 100, 100);
-    #     ctx.fillStyle = '#069';
-    #     ctx.fillText('Hello World', 2, 15);
-    #     // Add slight noise
-    #     for (let i = 0; i < 10; i++) {
-    #         ctx.fillStyle = `rgba(${Math.random()*255}, ${Math.random()*255}, ${Math.random()*255}, 0.2)`;
-    #         ctx.fillRect(
-    #             Math.random()*100, 
-    #             Math.random()*100, 
-    #             Math.random()*10, 
-    #             Math.random()*10
-    #         );
-    #     }
-    #     """
-
-    #     self.driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
-    #         "source": f"""
-    #         // Override WebGL
-    #         WebGLRenderingContext.prototype.getParameter = function(parameter) {{
-    #             if (parameter === 37445) return 'Intel Inc.';  // VENDOR
-    #             if (parameter === 37446) return 'Intel Iris OpenGL Engine';  // RENDERER
-    #             return Reflect.apply(...arguments);
-    #         }};
-    #         // Execute canvas script
-    #         {canvas_script}
-    #         """
-    #     })
-    #     self.driver.execute_cdp_cmd(
-    #         "Page.addScriptToEvaluateOnNewDocument", {
-    #             "source": """
-    #                 Object.defineProperty(navigator, 'webdriver', {
-    #                     get: () => undefined
-    #                 })
-    #             """
-    #             }
-    #     )
-    #     self.driver.execute_script("""
-    #         HTMLCanvasElement.prototype.toDataURL = function() {
-    #             return 'data:image/png;base64,SPOOFED_DATA';
-    #         };
-    #         """
-    #     )
 
 
     def _initialize_function_map(self):
@@ -205,40 +102,6 @@ class InteractionService:
         print(f"Current URL: {self.driver.current_url}")
     
 
-    # FAST FIND ELEMENT
-    # not used in practice
-    
-    # def _wait_find_self(self, criterion):
-    #     path = criterion.xpath
-    #     print(f"Using XPath: {path}")
-    
-    #     try:
-    #         criterion.webElement = WebDriverWait(self.driver, 10).until(
-    #             EC.presence_of_element_located((By.XPATH, path))
-    #         )
-    #         print("Element found successfully")
-    #         return True
-    #     except TimeoutException:
-    #         print(f"\nERROR: Timed out after 10 seconds while waiting for element with XPath: {path}")
-    #         print("Possible reasons:")
-    #         print("- The element doesn't exist")
-    #         print("- The XPath is incorrect")
-    #         print("- The page took too long to load")
-    #         print("- The element is in an iframe")
-    #         return False
-    #     except Exception as e:
-    #         print(f"\nERROR: An unexpected error occurred while waiting for element: {str(e)}")
-    #         return False
-
-    # def _find_element(self,nextPath,itemNo=0):
-    #     """Finds element"""
-    #     indexed_path = f"({nextPath})[{itemNo + 1}]"
-    #     return self.driver.find_element(By.XPATH, indexed_path)
-    
-    
-    # def _find_elements(self,nextPath):
-    #     return self.driver.find_elements(By.XPATH, nextPath)
-    
 
 
     #TODO: See if I need to pass in criteria or if I can just pass in xpath
@@ -280,6 +143,7 @@ class InteractionService:
             try:
                 print("search context, ",search_context)
                 print("xpath, ",xpath)
+                print("smartfind timeout",timeout)
                 return WebDriverWait(search_context, timeout).until(
                     EC.presence_of_element_located((By.XPATH, xpath)))
             except TimeoutException:

@@ -19,30 +19,42 @@ class InterruptionHandler:
             if self._should_handle(interruption, trigger_type, current_step, error):
                 print("Executing interruption in handle")
                 self._execute_interruption(interruption)
-
+                break
+    
+    #TODO: remove current_step and the whole passing it down chain
     def _should_handle(self, interruption, trigger_type, current_step, error):
         trigger = interruption.get("trigger", {})
-        print("Should Handling Trigger:", trigger,trigger.get("on"))
+        print("Should Handling Trigger:", trigger, trigger.get("on"))
 
         if trigger.get("on") != trigger_type:
             return False
 
-        # Error type filtering
-        if trigger_type == "on_error" and "error_types" in trigger:
-            if error.__class__.__name__ not in trigger["error_types"]:
+        # Add proper error object checking
+        if trigger_type == "on_error":
+            if error is None:
                 return False
+            if not hasattr(error, '__class__'):
+                return False
+            if "error_types" in trigger:
+                error_name = error.__class__.__name__
+                if error_name not in trigger["error_types"]:
+                    return False
 
-        # Step targeting
-        # if trigger_type in ["before_step", "after_step"]:
-        #     return current_step and current_step.xpath == trigger.get("target_step")
+
+
+            # Step targeting
+            # if trigger_type in ["before_step", "after_step"]:
+            #     return current_step and current_step.xpath == trigger.get("target_step")
 
         return True
+    
     def _execute_interruption(self, interruption):
         """Executes interruption actions if the element is found.
         Returns:
             bool: True if actions were executed, False if element not found.
         """
-        element = self.interaction.smart_find(None, interruption["xpath"])
+        print("executing interruption")
+        element = self.interaction.smart_find(None, interruption["xpath"],None,1)
         if not element:
             print(f"Interruption element not found: {interruption['xpath']}")
             return False

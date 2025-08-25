@@ -2,6 +2,8 @@ import time
 from django.core.management.base import BaseCommand
 from django.db import connections
 from django.db.utils import OperationalError
+from pymongo import MongoClient
+import sys  # For printing full exception info
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
@@ -12,13 +14,14 @@ class Command(BaseCommand):
                 # Check MySQL
                 connections['default'].ensure_connection()
                 # Check MongoDB (if using PyMongo)
-                from pymongo import MongoClient
-                MongoClient('mongodb://mongodb:27017/').admin.command('ping')
+                MongoClient('mongodb://mongodb:27017/', serverSelectionTimeoutMS=1000).admin.command('ping')
                 db_conn = True
-            except OperationalError:
-                self.stdout.write('MySQL not ready, retrying in 1s...')
+            except OperationalError as e:
+                self.stdout.write(self.style.ERROR(f'MySQL connection failed: {str(e)}'))
+                self.stdout.write(f'Full exception: {sys.exc_info()}')  # Prints full traceback
                 time.sleep(1)
             except Exception as e:
-                self.stdout.write(f'MongoDB not ready: {e}, retrying in 1s...')
+                self.stdout.write(self.style.ERROR(f'MongoDB connection failed: {str(e)}'))
+                self.stdout.write(f'Full exception: {sys.exc_info()}')  # Prints full traceback
                 time.sleep(1)
-        self.stdout.write('Databases ready!')
+        self.stdout.write(self.style.SUCCESS('Databases ready!'))

@@ -3,19 +3,39 @@ from bson.errors import InvalidId
 from django.conf import settings
 from pymongo.errors import PyMongoError  # For MongoDB-specific exceptions
 from bson import ObjectId  # For handling MongoDB's ObjectId
-from PyMonitor.mongo import db
+from PyMonitor.mongo import get_db  # Import get_db instead of db
 
 class MongoService:
     def __init__(self, collection_name: str = "website_config"):
-            """
-            Initialize MongoDB service using the shared connection pool.
+        """
+        Initialize MongoDB service using the shared connection pool.
+        """
+        print(f"Initializing MongoService with collection: {collection_name}")
+        
+        try:
+            self.db = get_db()  # Get the database connection
+            self.collection = self.db[collection_name]
+            print(f"Collection set: {self.collection}")
             
-            Args:
-                collection_name: Name of the collection to work with
-            """
-            
-            self.collection = db[collection_name]  # Use the pre-connected database
+        except Exception as e:
+            print(f"Failed to initialize MongoService: {e}")
+            self.collection = None
 
+
+    def _add_demo_filter(self, query_filter: Dict, is_demo_user: bool) -> Dict:
+        """Add demo/premium access control to query filter"""
+        if query_filter is None:
+            query_filter = {}
+            
+        if is_demo_user:
+            # Demo users can only see demo flows
+            query_filter["is_demo"] = True
+        else:
+            # Premium users can see ALL flows (both demo and premium)
+            # No filter needed - they get everything
+            pass
+            
+        return query_filter
     def url_exists(self, url: str) -> bool:
         """Check if a document with this URL already exists"""
         try:
@@ -26,7 +46,7 @@ class MongoService:
             return False  # Assume no duplicate on error
 
     # CREATE OPERATIONS
-    def create_flow(self, flow_data: Dict[str, Any]) -> bool:
+    def create_flow(self, flow_data: Dict[str, Any],is_demo: bool = False) -> bool:
         """Inserts document only if URL doesn't exist, verifies persistence"""
         try:
             # 0. Validate input and check for existing URL
@@ -39,7 +59,8 @@ class MongoService:
             if self.url_exists(url):
                 print(f"Document with URL '{url}' already exists")
                 return False
-                
+            flow_data["is_demo"] = is_demo  # ← Add this line
+
             # 1. Perform the insert
             result = self.collection.insert_one(flow_data)
             
@@ -61,7 +82,7 @@ class MongoService:
             return False
     
 
-    def get_flow(self, query_filter: Dict[str, Any], remove_id: bool = True) -> Optional[Dict]:
+    def get_flow(self, query_filter: Dict[str, Any],is_demo_user: bool, remove_id: bool = True,) -> Optional[Dict]:
         """
         Get a flow document by filter criteria.
         
@@ -73,6 +94,8 @@ class MongoService:
             The matching document as a dict, or None if not found/error
         """
         try:
+            query_filter = self._add_demo_filter(query_filter, is_demo_user)
+
             flow = self.collection.find_one(query_filter)
             if not flow:
                 return None
@@ -96,13 +119,11 @@ class MongoService:
                 return self._convert_mongo_doc(doc)
             return {}  # Explicit "not found" case
         except InvalidId:
-            print(f"Invalid ID format: {id_str}")
-            return {}  # Or raise specific exception
+            raise ValueError(f"Invalid flow ID format: {id_str}")  # Removed 'from e' since e wasn't defined
         except Exception as e:
-            print(f"DB query failed: {e}") 
-            raise  # Re-raise for proper error handling
+            raise Exception(f"Failed to fetch flow: {str(e)}") from e
 
-    def get_all_flows(self, filter_query: Optional[Dict] = None) -> List[Dict]:
+    def get_all_flows(self,is_demo_user: bool, filter_query: Optional[Dict] = None) -> List[Dict]:
         """
         Get all flows matching optional filter criteria.
         
@@ -113,6 +134,8 @@ class MongoService:
             List of flow documents
         """
         try:
+            filter_query = self._add_demo_filter(filter_query or {}, is_demo_user)
+
             filter_query = filter_query or {}
             flows = list(self.collection.find(filter_query))
             return [self._convert_mongo_doc(flow) for flow in flows]
@@ -140,9 +163,27 @@ class MongoService:
         except (PyMongoError, ValueError) as e:
             print(f"Error partially updating flow: {e}")
             return False
+    
+    def delete_flow(self, flow_id: str) -> bool:
+        """
+        Delete a flow by ID.
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            result = self.collection.delete_one({'_id': ObjectId(flow_id)})
+            return result.deleted_count > 0
+        except Exception:
+            return False
    
     @staticmethod
     def _convert_mongo_doc(doc: Dict) -> Dict:
-        """Convert MongoDB document to clean dict"""
-        doc["_id"] = str(doc["_id"])  # Convert ObjectId to string
+        """Convert MongoDB document to clean dict
+        Args:
+            doc: MongoDB document dictionary
+        Returns:
+            dict: Cleaned dictionary with ObjectId converted to string
+        """
+        if doc and '_id' in doc and isinstance(doc['_id'], ObjectId):
+            doc['_id'] = str(doc['_id'])
         return doc
