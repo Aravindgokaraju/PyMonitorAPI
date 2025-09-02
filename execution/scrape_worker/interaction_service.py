@@ -1,23 +1,16 @@
-import os
 import random
 import re
-import tempfile
 import time
 import undetected_chromedriver as uc  # Add this import
 from typing import List, Union
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import TimeoutException
-from selenium_stealth import stealth
 from execution.browser_config.stable_config import StableConfig
 from execution.browser_config.stealth_config import StealthConfig
 
@@ -39,21 +32,15 @@ class InteractionService:
             self.config = StableConfig()
             
         # Apply configurations
-        if isinstance(self.config, StableConfig):
-            self.driver = self.config.create_driver()
-        else:
-            self.driver = uc.Chrome(
-            options=self.chrome_options,
-            headless=False,
-            use_subprocess=True,
-            version_main=114  # Optional: specify Chrome version
-            )
-            self.config._apply_stealth_measures(self.driver)
-        
-        # Apply additional stealth measures if using stealth config
         if isinstance(self.config, StealthConfig):
+            print("Stealth driver")
+            self.driver = self.config.create_driver()
             self.config._apply_stealth_measures()
-            
+
+        else:
+            self.driver = self.config.create_driver()
+        
+        # Apply additional stealth measures if using stealth config            
         self.action = ActionChains(self.driver)
     
 

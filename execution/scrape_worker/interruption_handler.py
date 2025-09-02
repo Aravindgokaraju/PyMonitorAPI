@@ -1,5 +1,3 @@
-from selenium.common.exceptions import NoSuchElementException
-import time
 
 class InterruptionHandler:
     def __init__(self, interaction_service):

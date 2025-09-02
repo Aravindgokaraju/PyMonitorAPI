@@ -20,6 +20,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path('django-rq/', include('django_rq.urls')),  # For monitoring
     path('', include('execution.urls')),  # Add this line
 
 ]

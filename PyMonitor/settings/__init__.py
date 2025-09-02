@@ -10,8 +10,10 @@ ENVIRONMENT_SETTINGS = {
     'development': 'PyMonitor.settings.development',
     'production': 'PyMonitor.settings.production',
     'production_local': 'PyMonitor.settings.production_local',
-}
+    'worker': 'PyMonitor.settings.worker',
 
+}
+print("INIT Settings")
 # Get environment (default to development for safety)
 env = os.environ.get('DJANGO_ENV', 'development').lower()
 settings_module_path = ENVIRONMENT_SETTINGS.get(env, 'PyMonitor.settings.development')

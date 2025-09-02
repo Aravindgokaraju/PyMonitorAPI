@@ -1,4 +1,4 @@
-from execution.scraping_models import Criteria
+from execution.scrape_worker.scraping_models import Criteria
 class CommandStack:
     def __init__(self):
         self.stack:Criteria = []

@@ -77,6 +77,7 @@ CORS_ALLOW_CREDENTIALS = True
 # CORS_ALLOW_ALL_ORIGINS = True
 
 
+
 # Logging
 # Add this to your production_local.py
 LOGGING = {

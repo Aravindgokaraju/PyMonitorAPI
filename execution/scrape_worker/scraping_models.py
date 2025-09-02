@@ -1,10 +1,3 @@
-import json
-import re
-from typing import List, Optional
-from selenium.webdriver.remote.webelement import WebElement
-
-from execution.interaction_service import InteractionService
-
 
 
 class Criteria:

@@ -7,16 +7,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 print("PROD DOCKER YAAAAAAAY")
 
 # Common settings
+
+
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    'execution.apps.ExecutionConfig',
-    'corsheaders',
-]
+        "django.contrib.admin",
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+        "django.contrib.sessions",
+        "django.contrib.messages",
+        "django.contrib.staticfiles",
+        'execution.apps.ExecutionConfig',
+        'corsheaders',
+        'django_rq',
+    ]
+
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+RQ_QUEUES = {
+    'default': {
+        'URL': REDIS_URL,
+        'DEFAULT_TIMEOUT': 360,
+    },
+    'worker': {
+        'URL': REDIS_URL,
+        'DEFAULT_TIMEOUT': 600,
+    },
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

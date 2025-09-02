@@ -68,7 +68,8 @@ LOGGING = {
     },
 }
 
-
+# Scraping settings
+MAX_CONCURRENT_SCRAPES = 3  # Adjust based on your paid worker size
 
 
 

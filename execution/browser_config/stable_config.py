@@ -8,6 +8,7 @@ import os
 
 class StableConfig:
     def __init__(self):
+        print("STABLE CONFIG CONFIGING")
         self.chrome_options = Options()
         
     def apply(self):
@@ -23,7 +24,7 @@ class StableConfig:
         self.chrome_options.add_argument('--remote-debugging-port=9222')
 
         # Use environment variable or fallback
-        chrome_bin = os.environ.get('CHROME_BIN', '/usr/bin/google-chrome-stable')
+        chrome_bin = os.environ.get('CHROME_BIN')
         self.chrome_options.binary_location = chrome_bin
 
         # Random window size

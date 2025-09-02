@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from execution.scrape_website import ScrapingService
+from execution.scraping.scrape_website import ScrapingService
 
 class Command(BaseCommand):
     help = 'Run the web scraping process'

@@ -1,0 +1,88 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chrome
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub > /etc/apt/trusted.gpg.d/google-chrome.asc \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ChromeDriver (ADD THIS SECTION)
+RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}') \
+    && CHROME_MAJOR_VERSION=$(echo $CHROME_VERSION | cut -d'.' -f1) \
+    && wget -q -O /tmp/chromedriver_version.txt "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_MAJOR_VERSION}" \
+    && CHROMEDRIVER_VERSION=$(cat /tmp/chromedriver_version.txt) \
+    && wget -q -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" \
+    && unzip /tmp/chromedriver.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/ \
+    && chmod +x /usr/local/bin/chromedriver \
+    && rm -rf /tmp/chromedriver* \
+    && ln -s /usr/local/bin/chromedriver /usr/bin/chromedriver
+
+# Set work directory
+WORKDIR /app
+
+# Set environment for worker
+ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings.worker
+ENV PYTHONUNBUFFERED=1
+ENV REDIS_URL=redis://redis:6379/0
+
+# Copy and install worker-specific requirements
+COPY requirements-worker.txt .
+RUN pip install --no-cache-dir -r requirements-worker.txt
+
+# Copy project code
+COPY . .
+
+# Verify installations
+RUN echo "Chrome version:" && google-chrome --version
+RUN echo "ChromeDriver version:" && chromedriver --version
+
+# Run RQ worker
+CMD ["python", "manage.py", "rqworker", "worker"]
+
+# FROM python:3.11-slim
+
+# # Install system dependencies for Chrome
+# RUN apt-get update && apt-get install -y \
+#     wget \
+#     gnupg \
+#     curl \
+#     unzip \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Install Chrome
+# RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub > /etc/apt/trusted.gpg.d/google-chrome.asc \
+#     && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+#     && apt-get update \
+#     && apt-get install -y google-chrome-stable \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Set work directory
+# WORKDIR /app
+
+# # Set environment for worker
+# ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings.worker
+# ENV PYTHONUNBUFFERED=1
+# ENV REDIS_URL=redis://redis:6379/0
+
+# # Copy and install worker-specific requirements
+# COPY requirements-worker.txt .
+# RUN pip install --no-cache-dir -r requirements-worker.txt
+
+# # Copy project code
+# COPY . .
+
+# # Verify Chrome installation
+# RUN echo "Chrome version:" && google-chrome --version
+
+# # Run RQ worker for the 'worker' queue (no --url argument needed)
+# CMD ["python", "manage.py", "rqworker", "worker", "--settings=PyMonitor.settings.worker"]

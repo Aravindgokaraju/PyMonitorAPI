@@ -56,6 +56,8 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True  # Allows any origin
 
 
+
+
 # Security settings for development
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
