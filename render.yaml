@@ -3,11 +3,18 @@ services:
     name: django-backend
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python manage.py migrate && gunicorn PyMonitor.wsgi:application --bind 0.0.0.0:$PORT
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+    startCommand: |
+      python manage.py wait_for_db &&
+      python manage.py migrate &&
+      gunicorn PyMonitor.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: DJANGO_ENV
         value: production
+      - key: DJANGO_SETTINGS_MODULE
+        value: PyMonitor.settings.production
       - key: REDIS_URL
         fromService:
           type: redis
@@ -18,3 +25,7 @@ services:
           type: postgres
           name: my-postgres
           property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DISABLE_COLLECTSTATIC
+        value: 0
