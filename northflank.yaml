@@ -1,0 +1,12 @@
+version: "1"
+services:
+  chromedriver-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.chromedriver
+    environment:
+      - REDIS_URL=${REDIS_URL}
+      - DJANGO_SETTINGS_MODULE=PyMonitor.settings.worker
+    resources:
+      cpu: 1000
+      memory: 2048
