@@ -2,7 +2,7 @@ services:
   - type: web
     name: django-backend
     env: docker
-    dockerfilePath: Dockerfile
+    dockerfilePath: ./PyMonitor/Dockerfile
     plan: free
     envVars:
       - key: DJANGO_ENV
