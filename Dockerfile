@@ -46,11 +46,10 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
 
-CMD sh -c "
-    python manage.py wait_for_db &&
-    python manage.py migrate &&
-    python manage.py collectstatic --noinput &&
-    gunicorn PyMonitor.wsgi:application --bind 0.0.0.0:$PORT"
+CMD python manage.py wait_for_db && \
+    python manage.py migrate && \
+    python manage.py collectstatic --noinput && \
+    gunicorn PyMonitor.wsgi:application --bind 0.0.0.0:$PORT
     
 # # Production command WINDOWS
 # CMD python manage.py wait_for_db && \
