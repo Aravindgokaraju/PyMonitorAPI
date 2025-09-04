@@ -4,9 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.chromedriver
-    environment:
-      - REDIS_URL=${{ secrets.REDIS_URL }}
-      - DJANGO_ENV=worker
     resources:
       cpu: 1000
       memory: 2048
