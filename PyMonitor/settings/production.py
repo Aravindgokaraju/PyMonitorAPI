@@ -12,20 +12,47 @@ SECRET_KEY = os.environ.get('SECRET_KEY')  # Required in production
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
-        'OPTIONS': {
-            'sql_mode': 'STRICT_TRANS_TABLES',
+# Check if Supabase URI is provided
+if os.environ.get('SUPA_URI'):
+    # Parse Supabase PostgreSQL connection
+    import dj_database_url
+    
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('SUPA_URI'),
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    # Fallback to MySQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ.get('DB_PORT'),
+            'OPTIONS': {
+                'sql_mode': 'STRICT_TRANS_TABLES',
+            }
         }
     }
-}
+# # Database
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': os.environ.get('DB_NAME'),
+#         'USER': os.environ.get('DB_USER'),
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': os.environ.get('DB_HOST'),
+#         'PORT': os.environ.get('DB_PORT'),
+#         'OPTIONS': {
+#             'sql_mode': 'STRICT_TRANS_TABLES',
+#         }
+#     }
+# }
 
 # STATIC_URL = '/static/'
 # STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # This is the important one
@@ -38,6 +65,7 @@ MONGO_USER = os.environ.get('MONGO_USER')
 MONGO_PASS = os.environ.get('MONGO_PASS')
 MONGO_AUTH_SOURCE = os.environ.get('MONGO_AUTH_SOURCE')
 
+MONGODB_URI = os.environ.get('MONGODB_URI')
 
 
 # Security settings for production
