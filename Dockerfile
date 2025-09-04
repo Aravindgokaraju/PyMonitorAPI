@@ -1,5 +1,3 @@
-
-
 # Use a multi-stage build for production
 FROM python:3.10-slim as builder
 
@@ -30,20 +28,19 @@ RUN apt-get update && \
 RUN adduser --disabled-password --gecos "" myuser
 USER myuser
 
-# Copy installed packages from builder
+# Copy installed packages from builder - FIXED PATH
 COPY --from=builder --chown=myuser:myuser /root/.local /home/myuser/.local
 
 # Copy application code
 COPY --chown=myuser:myuser . .
 
-# Environment setup
-ENV PATH=/home/myuser/.local/bin:/usr/local/bin:$PATH
+# Environment setup - FIXED PATH (moved to end)
 ENV PYTHONUNBUFFERED=1
+ENV PATH="/home/myuser/.local/bin:${PATH}"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
-
 
 CMD python manage.py wait_for_db && \
     python manage.py migrate && \
