@@ -15,8 +15,8 @@ ENVIRONMENT_SETTINGS = {
 }
 print("INIT Settings")
 # Get environment (default to development for safety)
-env = os.environ.get('DJANGO_ENV', 'development').lower()
-settings_module_path = ENVIRONMENT_SETTINGS.get(env, 'PyMonitor.settings.development')
+env = os.environ.get('DJANGO_ENV').lower()
+settings_module_path = ENVIRONMENT_SETTINGS.get(env)
 
 print(f"Loading {env} settings from: {settings_module_path}")
 
