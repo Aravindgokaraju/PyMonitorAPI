@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile.chromedriver
     environment:
-      - REDIS_URL=${REDIS_URL}
-      - DJANGO_SETTINGS_MODULE=PyMonitor.settings.worker
+      - REDIS_URL=${{ secrets.REDIS_URL }}
+      - DJANGO_ENV=worker
     resources:
       cpu: 1000
       memory: 2048

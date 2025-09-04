@@ -12,5 +12,4 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PyMonitor.settings.production")
-print("Change Actually showing through github")
 application = get_wsgi_application()

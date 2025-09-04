@@ -41,7 +41,6 @@ RUN pip install --no-cache-dir -r requirements-worker.txt
 COPY . .
 
 # Set environment variables
-ENV DJANGO_SETTINGS_MODULE=PyMonitor.settings.worker
 ENV PYTHONUNBUFFERED=1
 ENV DISPLAY=:99
 

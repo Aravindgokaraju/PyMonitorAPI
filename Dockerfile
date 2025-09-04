@@ -39,7 +39,6 @@ COPY --chown=myuser:myuser . .
 # Environment setup
 ENV PATH=/home/myuser/.local/bin:/usr/local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_ENV=production
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
@@ -50,7 +49,7 @@ CMD python manage.py wait_for_db && \
     python manage.py migrate && \
     python manage.py collectstatic --noinput && \
     gunicorn PyMonitor.wsgi:application --bind 0.0.0.0:$PORT
-    
+
 # # Production command WINDOWS
 # CMD python manage.py wait_for_db && \
 #     python manage.py migrate && \
