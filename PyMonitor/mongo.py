@@ -11,15 +11,31 @@ def get_db():
     if _db is None:
         print("Initializing MongoDB connection...")
         try:
-            # Option 1: Use MONGODB_URI directly if provided
+            # Option 1: Use MONGODB_URI directly if provided (For Atlas)
             if hasattr(settings, 'MONGODB_URI') and settings.MONGODB_URI:
-                print(f"Using MongoDB URI: {settings.MONGODB_URI.replace(settings.MONGO_PASS, '***') if hasattr(settings, 'MONGO_PASS') else '***'}")
+                print("Using MongoDB Atlas connection...")
+                # Mask password in log for security
+                masked_uri = settings.MONGODB_URI
+                if '://' in masked_uri and '@' in masked_uri:
+                    # Basic masking: replace password with ***
+                    parts = masked_uri.split('@')
+                    auth_part = parts[0]
+                    if ':' in auth_part:
+                        user_pass = auth_part.split('://')[1]
+                        if ':' in user_pass:
+                            user = user_pass.split(':')[0]
+                            masked_uri = masked_uri.replace(user_pass, f"{user}:***")
+                
+                print(f"MongoDB URI: {masked_uri}")
+                
                 client = MongoClient(
                     settings.MONGODB_URI,
-                    connectTimeoutMS=3000,
-                    socketTimeoutMS=5000,
+                    connectTimeoutMS=10000,      # Increased for internet latency
+                    socketTimeoutMS=30000,       # Increased for internet requests
                     maxPoolSize=50,
-                    serverSelectionTimeoutMS=5000
+                    serverSelectionTimeoutMS=10000,  # Increased timeout
+                    retryWrites=True,            # Important for Atlas
+                    w="majority"                 # Important for Atlas
                 )
             
             # Option 2: Build URI from individual settings (fallback)
