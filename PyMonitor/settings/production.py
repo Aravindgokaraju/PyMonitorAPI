@@ -60,12 +60,12 @@ if os.environ.get('SUPA_URI'):
 
 # MongoDB settings
 # MongoDB Configuration with safe defaults
-MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'pymonitor')
-MONGO_HOST = os.environ.get('MONGO_HOST', 'localhost')
-MONGO_PORT = int(os.environ.get('MONGO_PORT', '27017'))  # Note: string default converted to int
-MONGO_USER = os.environ.get('MONGO_USER', '')
-MONGO_PASS = os.environ.get('MONGO_PASS', '')
-MONGO_AUTH_SOURCE = os.environ.get('MONGO_AUTH_SOURCE', 'admin')
+# MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'pymonitor')
+# MONGO_HOST = os.environ.get('MONGO_HOST', 'localhost')
+# MONGO_PORT = int(os.environ.get('MONGO_PORT', '27017'))  # Note: string default converted to int
+# MONGO_USER = os.environ.get('MONGO_USER', '')
+# MONGO_PASS = os.environ.get('MONGO_PASS', '')
+# MONGO_AUTH_SOURCE = os.environ.get('MONGO_AUTH_SOURCE', 'admin')
 
 MONGODB_URI = os.environ.get('MONGODB_URI')
 
