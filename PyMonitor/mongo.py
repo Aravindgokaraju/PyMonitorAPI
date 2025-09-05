@@ -39,21 +39,21 @@ def get_db():
                 )
             
             # Option 2: Build URI from individual settings (fallback)
-            else:
-                # Properly encode username and password for URI
-                username = quote_plus(settings.MONGO_USER)
-                password = quote_plus(settings.MONGO_PASS)
+            # else:
+            #     # Properly encode username and password for URI
+            #     username = quote_plus(settings.MONGO_USER)
+            #     password = quote_plus(settings.MONGO_PASS)
                 
-                mongo_uri = f"mongodb://{username}:{password}@{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGO_DB_NAME}?authSource={settings.MONGO_AUTH_SOURCE}"
-                print(f"Using constructed MongoDB URI: {mongo_uri.replace(password, '***')}")
+            #     mongo_uri = f"mongodb://{username}:{password}@{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGO_DB_NAME}?authSource={settings.MONGO_AUTH_SOURCE}"
+            #     print(f"Using constructed MongoDB URI: {mongo_uri.replace(password, '***')}")
                 
-                client = MongoClient(
-                    mongo_uri,
-                    connectTimeoutMS=3000,
-                    socketTimeoutMS=5000,
-                    maxPoolSize=50,
-                    serverSelectionTimeoutMS=5000
-                )
+            #     client = MongoClient(
+            #         mongo_uri,
+            #         connectTimeoutMS=3000,
+            #         socketTimeoutMS=5000,
+            #         maxPoolSize=50,
+            #         serverSelectionTimeoutMS=5000
+            #     )
             
             # Test connection
             client.admin.command('ping')
