@@ -15,6 +15,7 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 # Check if Supabase URI is provided
 if os.environ.get('SUPA_URI'):
     # Parse Supabase PostgreSQL connection
+    print("Connecting with URI")
     import dj_database_url
     
     DATABASES = {
