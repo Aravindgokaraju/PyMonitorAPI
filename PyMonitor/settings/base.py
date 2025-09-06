@@ -99,6 +99,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://127.0.0.1",         
     "http://frontend",
-    "https://mywebsite-zsnb.onrender.com/",          
+    "https://mywebsite-zsnb.onrender.com",          
 ]
 CORS_ALLOW_CREDENTIALS = True
