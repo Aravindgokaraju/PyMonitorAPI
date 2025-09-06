@@ -52,6 +52,7 @@ DATABASES = {
 # STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # This is the important one
 
 # MongoDB settings
+
 MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME')
 MONGO_HOST = os.environ.get('MONGO_HOST')
 MONGO_PORT = int(os.environ.get('MONGO_PORT', '27017'))
@@ -66,12 +67,12 @@ SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False') == 'True'
 SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
 CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False') == 'True'
 CORS_ALLOW_CREDENTIALS = True
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",    # React development server
-#     "http://127.0.0.1:3000",    # React development server
-#     "https://yourdomain.com",    # Your production domain
-#     "https://www.yourdomain.com", # Your production domain with www
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",    # React development server
+    "http://127.0.0.1:3000",    # React development server
+    "https://mywebsite-zsnb.onrender.com",    # Your production domain
+    "https://www.mywebsite-zsnb.onrender.com", # Your production domain with www
+]
 
 # Or if you want to allow all origins during development (not recommended for production)
 # CORS_ALLOW_ALL_ORIGINS = True
