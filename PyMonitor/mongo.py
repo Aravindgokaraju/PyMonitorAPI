@@ -1,4 +1,3 @@
-# PyMonitor/mongo.py
 from pymongo import MongoClient
 from django.conf import settings
 from urllib.parse import quote_plus
@@ -30,31 +29,15 @@ def get_db():
                 
                 client = MongoClient(
                     settings.MONGODB_URI,
-                    connectTimeoutMS=10000,      # Increased for internet latency
-                    socketTimeoutMS=30000,       # Increased for internet requests
+                    connectTimeoutMS=10000,      
+                    socketTimeoutMS=30000,       
                     maxPoolSize=50,
-                    serverSelectionTimeoutMS=10000,  # Increased timeout
-                    retryWrites=True,            # Important for Atlas
-                    w="majority"                 # Important for Atlas
+                    serverSelectionTimeoutMS=10000,  
+                    retryWrites=True,            
+                    w="majority"                 
                 )
             
-            # Option 2: Build URI from individual settings (fallback)
-            # else:
-            #     # Properly encode username and password for URI
-            #     username = quote_plus(settings.MONGO_USER)
-            #     password = quote_plus(settings.MONGO_PASS)
-                
-            #     mongo_uri = f"mongodb://{username}:{password}@{settings.MONGO_HOST}:{settings.MONGO_PORT}/{settings.MONGO_DB_NAME}?authSource={settings.MONGO_AUTH_SOURCE}"
-            #     print(f"Using constructed MongoDB URI: {mongo_uri.replace(password, '***')}")
-                
-            #     client = MongoClient(
-            #         mongo_uri,
-            #         connectTimeoutMS=3000,
-            #         socketTimeoutMS=5000,
-            #         maxPoolSize=50,
-            #         serverSelectionTimeoutMS=5000
-            #     )
-            
+
             # Test connection
             client.admin.command('ping')
             print("MongoDB connection successful")

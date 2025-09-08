@@ -1,21 +1,19 @@
 from typing import Any, Dict, List, Optional
 from bson.errors import InvalidId
 from django.conf import settings
-from pymongo.errors import PyMongoError  # For MongoDB-specific exceptions
-from bson import ObjectId  # For handling MongoDB's ObjectId
-from PyMonitor.mongo import get_db  # Import get_db instead of db
+from pymongo.errors import PyMongoError 
+from bson import ObjectId  
+from PyMonitor.mongo import get_db  
 
 class MongoService:
     def __init__(self, collection_name: str = "website_config"):
         """
         Initialize MongoDB service using the shared connection pool.
         """
-        print(f"Initializing MongoService with collection: {collection_name}")
         
         try:
             self.db = get_db()  # Get the database connection
             self.collection = self.db[collection_name]
-            print(f"Collection set: {self.collection}")
             
         except Exception as e:
             print(f"Failed to initialize MongoService: {e}")
@@ -31,8 +29,7 @@ class MongoService:
             # Demo users can only see demo flows
             query_filter["is_demo"] = True
         else:
-            # Premium users can see ALL flows (both demo and premium)
-            # No filter needed - they get everything
+            
             pass
             
         return query_filter
@@ -119,7 +116,7 @@ class MongoService:
                 return self._convert_mongo_doc(doc)
             return {}  # Explicit "not found" case
         except InvalidId:
-            raise ValueError(f"Invalid flow ID format: {id_str}")  # Removed 'from e' since e wasn't defined
+            raise ValueError(f"Invalid flow ID format: {id_str}")
         except Exception as e:
             raise Exception(f"Failed to fetch flow: {str(e)}") from e
 

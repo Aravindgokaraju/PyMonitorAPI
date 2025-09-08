@@ -3,7 +3,6 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-print("REAL PRODUCTION")
 # Production settings
 from .base import *
 
@@ -15,7 +14,6 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 # Check if Supabase URI is provided
 if os.environ.get('SUPA_URI'):
     # Parse Supabase PostgreSQL connection
-    print("Connecting with URI")
     import dj_database_url
     
     DATABASES = {
@@ -25,48 +23,10 @@ if os.environ.get('SUPA_URI'):
             ssl_require=True
         )
     }
-# else:
-#     # Fallback to MySQL
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.db.backends.mysql',
-#             'NAME': os.environ.get('DB_NAME'),
-#             'USER': os.environ.get('DB_USER'),
-#             'PASSWORD': os.environ.get('DB_PASSWORD'),
-#             'HOST': os.environ.get('DB_HOST'),
-#             'PORT': os.environ.get('DB_PORT'),
-#             'OPTIONS': {
-#                 'sql_mode': 'STRICT_TRANS_TABLES',
-#             }
-#         }
-#     }
-# # Database
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.environ.get('DB_NAME'),
-#         'USER': os.environ.get('DB_USER'),
-#         'PASSWORD': os.environ.get('DB_PASSWORD'),
-#         'HOST': os.environ.get('DB_HOST'),
-#         'PORT': os.environ.get('DB_PORT'),
-#         'OPTIONS': {
-#             'sql_mode': 'STRICT_TRANS_TABLES',
-#         }
-#     }
-# }
-
-# STATIC_URL = '/static/'
-# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # This is the important one
 
 # MongoDB settings
 # MongoDB Configuration with safe defaults
 MONGO_DB_NAME = os.environ.get('MONGO_DB_NAME', 'pymonitor')
-# MONGO_HOST = os.environ.get('MONGO_HOST', 'localhost')
-# MONGO_PORT = int(os.environ.get('MONGO_PORT', '27017'))  # Note: string default converted to int
-# MONGO_USER = os.environ.get('MONGO_USER', '')
-# MONGO_PASS = os.environ.get('MONGO_PASS', '')
-# MONGO_AUTH_SOURCE = os.environ.get('MONGO_AUTH_SOURCE', 'admin')
-
 MONGODB_URI = os.environ.get('MONGODB_URI')
 
 

@@ -55,7 +55,6 @@ class MaxStealthConfig(BaseConfig):
         raw_proxy = random.choice(self.proxies)  # "ip:port"
         ip, port = raw_proxy.split(":")
         # Use random user/pass — change this if you have fixed credentials
-        # TODO: strenghten proxy cred security
         base_user = os.getenv("PROXY_USER", "default_user")  # 2nd arg = optional fallback
         username = f"{base_user}-{random.randint(1000,9999)}"
 
@@ -166,12 +165,6 @@ class MaxStealthConfig(BaseConfig):
             }
     ] 
     
-    # def create_temp_profile(self,chrome_options):
-    #     profile_path = tempfile.mkdtemp()
-    #     chrome_options.add_argument(f"--user-data-dir={profile_path}")
-    #     # Seed with realistic browsing data
-    #     os.makedirs(f"{profile_path}/Default/Cache", exist_ok=True)
-    #     os.makedirs(f"{profile_path}/Default/Cookies", exist_ok=True)
 
     def create_temp_profile(self):
         profile_path = tempfile.mkdtemp()

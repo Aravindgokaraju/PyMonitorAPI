@@ -13,7 +13,6 @@ class Browser:
     def _patch_distutils(cls):
         """Monkey-patch distutils before UC is imported"""
         if "distutils" not in sys.modules:
-            # Replace with setuptools' vendored distutils
             sys.modules['distutils'] = setuptools.distutils
             sys.modules['distutils.version'] = setuptools.distutils.version
 

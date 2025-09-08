@@ -2,7 +2,6 @@
 import os
 from pathlib import Path
 
-print("WORKER SETTINGS")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Minimal settings - worker doesn't need most Django features
@@ -60,8 +59,3 @@ CORS_ORIGIN_ALLOW_ALL = False
 
 # No static files, no templates, no email, etc.
 
-print("=" * 50)
-print("PURE PROCESSOR WORKER SETTINGS LOADED")
-print("Worker: No database, just processing")
-print(f"Redis URL: {RQ_QUEUES['worker']['URL']}")
-print("=" * 50)

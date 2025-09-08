@@ -3,8 +3,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load base environment variables (if any)
-print("PROD DOCKER YAAAAAAAY")
 
 # Common settings
 
@@ -92,13 +90,9 @@ AUTH_USER_MODEL = 'execution.AppUser'
 
 # CORS for production
 CORS_ALLOWED_ORIGINS = [
-    "http://yourdomain.com",
-    "https://yourdomain.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
     "http://localhost",
     "http://127.0.0.1",         
-    "http://frontend",
+    # "http://frontend", Dev docker
     "https://mywebsite-zsnb.onrender.com",          
 ]
 CORS_ALLOW_CREDENTIALS = True

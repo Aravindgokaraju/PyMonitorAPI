@@ -21,13 +21,9 @@ urlpatterns = [
 
 
 
-    # path('execute/', scraping_views.execute_scraping, name='execute-scraping'),
     path('scrape/', scraping_views.start_worker, name='start-scraping'),
     path('status/', scraping_views.queue_status, name='queue-status'),
 
-    # path('max-stealth-test/', scraping_views.max_stealth_test, name='max-stealth-test'),
-    # path('stealth-test/', scraping_views.standard_stealth_test, name='standard-stealth-test'),
-    # path('stable-test/', scraping_views.stable_test, name='stable-test'),
 
     path('apply-upgrade/', user_views.apply_upgrade, name='apply-upgrade'),
     path('apply-downgrade/', user_views.apply_downgrade, name='apply-downgrade'),

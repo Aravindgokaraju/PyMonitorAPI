@@ -8,64 +8,12 @@ from execution.scrape_worker.tasks import scrape_worker
 
 logger = logging.getLogger(__name__)
 
-# @api_view(['POST'])
-# def execute_scraping(request):
-#     try:
-#         scraper = ScrapingService()
-#         logger.info("Starting scraping process...")
-#         results = scraper.scrape_websites(request.data)
-#         logger.info(f"Scraping completed with {len(results)} results")
-        
-#         return Response({
-#             'status': 'success',
-#             'data': results
-#         }, status=status.HTTP_200_OK)
-        
-#     except Exception as e:
-#         logger.error(f"Scraping failed: {str(e)}", exc_info=True)
-#         return Response({
-#             'status': 'error',
-#             'message': str(e)
-#         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-# @api_view(['POST'])
-# def start_worker(request):
-#     """This runs on the FREE web worker, queues job for PAID worker"""
-#     if request.method == 'POST':
-#         data = request.POST
-#         flow_list = data.get('website_config_id', [])
-#         sku_list = data.get('sku_list', [])
-#         print("STARTING WORKER")
-#         try:
-#             job = enqueue(
-#                 scrape_worker, 
-#                 flow_list, 
-#                 sku_list,
-#                 queue='worker',
-#                 timeout=600
-#             )
-            
-#             print(f"Job queued successfully: {job.id}")
-            
-#             return JsonResponse({
-#                 'job_id': job.id,
-#                 'status': 'queued',
-#                 'message': 'Scraping job queued for processing'
-#             })
-            
-#         except Exception as e:
-#             print(f"Failed to queue job: {str(e)}")
-#             return JsonResponse({
-#                 'error': f'Failed to queue job: {str(e)}'
-#             }, status=500)
 
 from django_rq import get_queue
 
 @api_view(['POST'])
 def start_worker(request):
     data = request.data
-    print("DATA:",data)
     flow_list = data.get('flows', [])
     sku_list = data.get('skus', [])
     
@@ -77,7 +25,6 @@ def start_worker(request):
         data,
     )
     
-    print(f"Job queued successfully: {job.id}")
     return JsonResponse({'job_id': job.id, 'status': 'queued'})
 
 @api_view(['GET'])
