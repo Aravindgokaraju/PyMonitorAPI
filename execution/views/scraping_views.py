@@ -3,13 +3,13 @@ from django_rq import enqueue, get_queue
 from rest_framework.decorators import api_view
 import logging
 
-from execution.scrape_worker.tasks import scrape_worker
+# from execution.scrape_worker.task import scrape_worker
 
+
+from rq.job import Job
+from rq.exceptions import NoSuchJobError
 
 logger = logging.getLogger(__name__)
-
-
-from django_rq import get_queue
 
 @api_view(['POST'])
 def start_worker(request):
@@ -19,9 +19,9 @@ def start_worker(request):
     
     # Explicitly get the worker queue
     queue = get_queue('worker')
-    
+    print("scrape string passing @@@@@@@@@@@@@@@@@@")
     job = queue.enqueue(
-        scrape_worker, 
+        'scraping.scraping_worker.tasks.scrape_worker', 
         data,
     )
     
@@ -39,10 +39,6 @@ def queue_status(request):
     })
 
 # In your views.py
-from django.http import JsonResponse
-from django_rq import get_queue
-from rq.job import Job
-from rq.exceptions import NoSuchJobError
 
 @api_view(['GET'])
 def get_job_result(request, job_id):
