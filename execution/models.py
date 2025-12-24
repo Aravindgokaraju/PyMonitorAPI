@@ -1,4 +1,5 @@
 
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -43,7 +44,11 @@ class AppUser(AbstractUser):
     user_type = models.CharField(max_length=20, choices=USER_TYPES, default=IS_DEMO)
     upgrade_key = models.CharField(max_length=100, blank=True, null=True)
     upgraded_at = models.DateTimeField(blank=True, null=True)
-    
+    api_key = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False
+    )
     class Meta:
         # Optional: add a unique db_table if needed
         pass

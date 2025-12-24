@@ -3,12 +3,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-# BASE_DIR = Path(__file__).resolve().parent.parent.parent # NEEDED FOR DOTENV ONLY
-# print("BAAAASSSSEEEE____DIIIIRRRRR",BASE_DIR)
-# # Production settings
-# dotenv_path = BASE_DIR / '.env.production'
-# print("DOOOTTTEEENVVVV",dotenv_path)
-# load_dotenv(dotenv_path=dotenv_path)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent # NEEDED FOR DOTENV ONLY
+print("BAAAASSSSEEEE____DIIIIRRRRR",BASE_DIR)
+# Production settings
+dotenv_path = BASE_DIR / '.env.production'
+print("DOOOTTTEEENVVVV",dotenv_path)
+load_dotenv(dotenv_path=dotenv_path)
 
 from .base import *
 
