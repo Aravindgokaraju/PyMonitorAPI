@@ -33,6 +33,7 @@ class MongoService:
             pass
             
         return query_filter
+    
     def url_exists(self, url: str) -> bool:
         """Check if a document with this URL already exists"""
         try:
@@ -56,7 +57,7 @@ class MongoService:
             if self.url_exists(url):
                 print(f"Document with URL '{url}' already exists")
                 return False
-            flow_data["is_demo"] = is_demo  # ← Add this line
+            flow_data["is_demo"] = is_demo
 
             # 1. Perform the insert
             result = self.collection.insert_one(flow_data)

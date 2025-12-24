@@ -52,8 +52,9 @@ MONGO_PASS = os.environ.get('MONGO_PASS')
 MONGO_AUTH_SOURCE = os.environ.get('MONGO_AUTH_SOURCE')
 
 # CORS for development
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = True  # Allows any origin
+# CORS_ALLOW_CREDENTIALS = False
+# CORS_ALLOW_ALL_ORIGINS = True  # Allows any origin
+
 
 
 REDIS_HOST = "redis"
